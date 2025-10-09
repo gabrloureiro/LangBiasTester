@@ -28,7 +28,21 @@
         /// </summary>
         private void InitializeComponent()
         {
+            participantIDBox = new TextBox();
             SuspendLayout();
+            // 
+            // participantIDBox
+            // 
+            participantIDBox.Anchor = AnchorStyles.None;
+            participantIDBox.BackColor = Color.Silver;
+            participantIDBox.BorderStyle = BorderStyle.None;
+            participantIDBox.Font = new Font("Consolas", 9F, FontStyle.Bold, GraphicsUnit.Point, 0);
+            participantIDBox.Location = new Point(0, 0);
+            participantIDBox.Name = "participantIDBox";
+            participantIDBox.PlaceholderText = "Participant ID";
+            participantIDBox.Size = new Size(200, 15);
+            participantIDBox.TabIndex = 0;
+            participantIDBox.KeyDown += ParticipantIDBox_KeyDown;
             // 
             // Form1
             // 
@@ -36,6 +50,7 @@
             AutoScaleMode = AutoScaleMode.Font;
             BackColor = Color.Black;
             ClientSize = new Size(1920, 1080);
+            Controls.Add(participantIDBox);
             FormBorderStyle = FormBorderStyle.None;
             KeyPreview = true;
             Margin = new Padding(3, 2, 3, 2);
@@ -47,8 +62,11 @@
             WindowState = FormWindowState.Maximized;
             Load += Form1_Load;
             ResumeLayout(false);
+            PerformLayout();
         }
 
         #endregion
+
+        internal TextBox participantIDBox;
     }
 }

@@ -9,12 +9,7 @@ namespace LangBiasTester.Infrastructure.Managers
 {
     internal class ConditionManager
     {
-        internal List<Condition> Conditions;
-
-        internal ConditionManager()
-        {
-            Conditions = [];
-        }
+        internal ConditionManager() { }
 
         //TODO: split audios evenly according to conditions. Calls ValidateSplit to ensure it can be done.
         internal void EvenSplit() { }

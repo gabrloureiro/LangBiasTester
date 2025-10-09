@@ -11,13 +11,13 @@ namespace LangBiasTester.Infrastructure.Models
     {
         internal Condition Condition;
         internal AudioManager AudioMix;
-        internal ResponseManager Response { get; set; }
-
+        internal Keys? Response { get; set; }
+        internal int Round;
+        
         internal Trial(Condition condition)
         {
             Condition = condition;
             AudioMix = new AudioManager();
-            Response = new ResponseManager();
         }
     }
 }
