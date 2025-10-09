@@ -10,14 +10,15 @@ namespace LangBiasTester.Infrastructure.Models
     internal class Trial
     {
         internal Condition Condition;
-        internal AudioManager AudioMix;
+        internal List<Audio> Audios;
         internal Keys? Response { get; set; }
         internal int Round;
         
-        internal Trial(Condition condition)
+        internal Trial(Condition condition, int round)
         {
+            Audios = [];
             Condition = condition;
-            AudioMix = new AudioManager();
+            Round = round;
         }
     }
 }

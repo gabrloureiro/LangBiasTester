@@ -19,6 +19,7 @@ namespace LangBiasTester.Infrastructure.Managers
         internal int TimeBetweenTrials;
         internal int ResponseWindow;
         internal int Rounds;
+        internal int TrialsPerCondition;
 
         public ExperimentManager()
         {
@@ -32,12 +33,12 @@ namespace LangBiasTester.Infrastructure.Managers
 
         internal void Initialize()
         {
-            //Experiment.Rounds.Initialize(ConditionManager.Conditions, AudioDuration);
+            TrialManager.InitializeTrials(Trials, Conditions, TrialsPerCondition, Rounds, ResponseWindow);
         }
 
         internal void Run()
         {
-            //Experiment.Rounds.Run(TimeBetweenTrials, ResponseWindow);
+            
         }
     }
 }

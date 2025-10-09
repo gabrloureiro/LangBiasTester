@@ -12,35 +12,54 @@ namespace LangBiasTester.Infrastructure.Managers
     {
         internal AudioManager audios;
 
-        internal TrialManager() { }
-
-        internal void Initialize(List<Trial> trials, List<Condition> conditions, int audioDuration)
+        internal TrialManager()
         {
-            foreach (Condition condition in conditions)
-            {
-                Trial trial = new Trial(condition);
-                trial.AudioMix.PrepareMix(condition, audioDuration);
+            audios = new AudioManager();
+        }
 
-                trials.Add(trial);
+        internal void InitializeTrials
+            (
+            LinkedList<Trial> trials,
+            List<Condition> conditions,
+            int trialsPerCondition,
+            int rounds,
+            int audioDuration
+            )
+        {
+            int round = -1;
+
+            // Generate trials one by one, assigning mixed audios and rounds
+            for (int trialNumber = 0; trialNumber < trialsPerCondition * rounds; trialNumber++)
+            {
+                int totalConditions = conditions.Count;
+                int currentConditionIndex = trialNumber % totalConditions;
+
+                if (currentConditionIndex == 0) round++;
+
+                Trial newTrial = new(conditions[currentConditionIndex], round)
+                {
+                    Audios = audios.PrepareMix(conditions[currentConditionIndex], audioDuration)
+                };
+
+                trials.AddLast(newTrial);
             }
         }
 
         //TODO: implement T1I1 algorithm to shuffle "Trials" IN PLACE (see KW's matlab script)
-        internal void T1I1() { }
-
-        internal async void StartTrial(Trial trial, int responseWindow)
+        internal void T1I1(LinkedList<Trial> trials)
         {
-            trial.AudioMix.Play();
-            //await trial.Response.CollectResponse(responseWindow);
+            int rounds = trials.Last.Value.Round;
+
+            for (int round = 0; round <= rounds; round++)
+            {
+                //shuffle filtered list
+                //perhaps have a "T1I1" function which just generates the indices -- get the total number of conditions from filtered list
+            }
         }
 
-        internal void Run(List<Trial> trials, int timeBetweenTrials, int responseWindow)
+        internal void StartTrial(Trial trial)
         {
-            foreach(Trial trial in trials)
-            {
-                StartTrial(trial, responseWindow);
-                Thread.Sleep(timeBetweenTrials);
-            }
+            audios.Play(trial.Audios);
         }
     }
 }
