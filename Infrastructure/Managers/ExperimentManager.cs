@@ -4,41 +4,35 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using LangBiasTester.Infrastructure.Models;
+using LangBiasTester.Operators;
 using LangBiasTester.Operators.DataHandlers;
 
 namespace LangBiasTester.Infrastructure.Managers
 {
     internal class ExperimentManager
     {
-        internal ConditionManager ConditionManager;
-        internal TrialManager TrialManager;
-        internal List<Condition> Conditions;
-        internal LinkedList<Trial> Trials;
-        internal DataExporter DataExporter;
+        private readonly DataExporter _dataExporter = new();
+        internal Settings _settings = new(42);
 
-        internal int TimeBetweenTrials;
-        internal int ResponseWindow;
-        internal int Rounds;
-        internal int TrialsPerCondition;
+        private readonly ConditionManager _conditionManager = new();
+        private readonly TrialManager _trialManager = new();
 
-        public ExperimentManager()
-        {
-            ConditionManager = new ConditionManager();
-            TrialManager = new TrialManager();
-            Conditions = [];
-            Trials = [];
+        internal List<Condition> Conditions = [];
+        internal LinkedList<Trial> Trials = [];
 
-            DataExporter = new DataExporter();
-        }
+        internal int TimeBetweenTrials { get; set; }
+        internal int ResponseWindow { get; set; }
+        internal int Rounds { get; set; }
+        internal int TrialsPerCondition { get; set; }
 
         internal void Initialize()
         {
-            TrialManager.InitializeTrials(Trials, Conditions, TrialsPerCondition, Rounds, ResponseWindow);
+            _trialManager.InitializeTrials(Trials, Conditions, TrialsPerCondition, Rounds, ResponseWindow);
         }
 
-        internal void Run()
+        internal void RunTrial(Trial trial)
         {
-            
+            _trialManager.StartTrial(trial);
         }
     }
 }

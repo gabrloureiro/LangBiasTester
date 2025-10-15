@@ -47,7 +47,7 @@ namespace LangBiasTester.Infrastructure.Managers
         internal void Play(List<Audio> audios)
         {
             // For testing: display a message
-            MessageBox.Show("Test👍");
+            //MessageBox.Show("Audio: " + audios);
         }
     }
 }

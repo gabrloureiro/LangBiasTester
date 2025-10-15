@@ -29,6 +29,7 @@ namespace LangBiasTester.Infrastructure.Managers
             int round = -1;
 
             // Generate trials one by one, assigning mixed audios and rounds
+            // FIX: rounds are not getting calculated properly
             for (int trialNumber = 0; trialNumber < trialsPerCondition * rounds; trialNumber++)
             {
                 int totalConditions = conditions.Count;
@@ -46,9 +47,9 @@ namespace LangBiasTester.Infrastructure.Managers
         }
 
         //TODO: implement T1I1 algorithm to shuffle "Trials" IN PLACE (see KW's matlab script)
-        internal void T1I1(LinkedList<Trial> trials)
+        internal void T1I1(List<Trial> trials)
         {
-            int rounds = trials.Last.Value.Round;
+            int rounds = trials[^1].Round;
 
             for (int round = 0; round <= rounds; round++)
             {

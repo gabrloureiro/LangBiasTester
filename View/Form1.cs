@@ -9,26 +9,32 @@ namespace LangBiasTester
 {
     public partial class Form1 : Form
     {
-        private KeyManager KeyManager;
-        private ExperimentManager Experiment;
-        private ParticipantInfo ParticipantInfo;
-        private Util Util;
-        private TextBox ParticipantIDBox;
-        private Label Label;
+        //private KeyManager KeyManager;
+        private readonly ExperimentManager _experiment;
+        private readonly ParticipantInfo _participantInfo;
+        private Util _util;
+        private TextBox _participantIDBox;
+        private Label _label;
+
+        private System.Windows.Forms.Timer _timer = new();
+
+        private LinkedListNode<Trial>? _currentTrial;
+        private int _currentTimer;
 
         internal Form1(ExperimentManager experiment, Util util)
         {
             InitializeComponent();
-            KeyPreview = true;
-            KeyManager = new KeyManager(this);
-            ParticipantInfo = new ParticipantInfo();
-            ParticipantIDBox = new TextBox();
-            Label = new Label();
 
-            Experiment = experiment;
-            Util = util;
+            //KeyManager = new KeyManager(this);
+            _participantInfo = new ParticipantInfo();
+            _participantIDBox = new TextBox();
+            _label = new Label();
+
+            _experiment = experiment;
+            _util = util;
             ActiveControl = null;
         }
+
 
         #region Control methods
         private void SetUpControl(Control control, string name, Size size, Color backColor, Font font, string text)
@@ -51,7 +57,6 @@ namespace LangBiasTester
 
             control.TabIndex = 0;
         }
-
         private void CenterControl(Control controlToCenter)
         {
             if (controlToCenter.Parent != null)
@@ -68,19 +73,19 @@ namespace LangBiasTester
         {
             int participantID;
 
-            if (e.KeyCode == Keys.Enter && int.TryParse(ParticipantIDBox.Text, out participantID))
+            if (e.KeyCode == Keys.Enter && int.TryParse(_participantIDBox.Text, out participantID))
             {
-                if (participantID != 42)
+                if (participantID != _experiment._settings.adminID)
                 {
-                    ParticipantInfo.ID = participantID;
+                    _participantInfo.ID = participantID;
 
                     // Optionally, prevent the default "ding" sound or prevent the form from being submitted if it's the default accept button.
                     e.SuppressKeyPress = true;
 
-                    ParticipantIDBox.KeyDown -= ParticipantIDBox_KeyDown;
-                    Controls.Remove(ParticipantIDBox);
+                    _participantIDBox.KeyDown -= ParticipantIDBox_KeyDown;
+                    Controls.Remove(_participantIDBox);
 
-                    MessageBox.Show("Participant ID registered: " + ParticipantInfo.ID.ToString()); //change when settings
+                    MessageBox.Show("Participant ID registered: " + _participantInfo.ID.ToString()); //change when settings
 
                     RunInstructions();
                 }
@@ -88,29 +93,89 @@ namespace LangBiasTester
                 else MessageBox.Show("Settings menu will go here");
             }
         }
-
         private void Instructions_KeyDown(object sender, KeyEventArgs e)
         {
             e.SuppressKeyPress = true;
 
-            Controls.Remove(Label);
+            Controls.Remove(_label);
+
+            MessageBox.Show("Instructions check"); //remove
+
             KeyDown -= Instructions_KeyDown;
 
             RunTraining();
+        }
+        private void TimeUp(object sender, EventArgs e)
+        {
+            ResetTrial();
+
+            MessageBox.Show("Time's up"); //remove
+
+            _currentTrial.Value.Response = null;
+
+            RunTrial(_currentTrial.Next);
+        }
+        private void CatchResponse(object sender, KeyEventArgs e)
+        {
+            ResetTrial();
+
+            e.SuppressKeyPress = true;
+
+            MessageBox.Show("Response: " + e.KeyCode); //remove
+
+            _currentTrial.Value.Response = e.KeyCode;
+
+            RunTrial(_currentTrial.Next);
+        }
+        private void TimerStart()
+        {
+            _timer.Enabled = true;
+            _timer.Tick += TimeUp;
+            _timer.Interval = _currentTimer * 1000;
+            _timer.Start();
+        }
+        private void TimerStop()
+        {
+            _timer.Stop();
+            _timer.Enabled = false;
+        }
+        private void ResetTrial()
+        {
+            TimerStop();
+            _timer.Tick -= TimeUp;
+            KeyDown -= CatchResponse;
+        }
+        private void RunTrial(LinkedListNode<Trial>? currentTrial)
+        {
+            if (currentTrial == null)
+            {
+                EndExperiment();
+            }
+            else
+            {
+                _experiment.RunTrial(currentTrial.Value);
+
+                MessageBox.Show("Running trial"); //remove
+
+                KeyDown += CatchResponse; // subscribes KeyDown event
+                TimerStart(); // subscribes timer end (Tick) event
+                // whichever is triggered first will cancel the other and call RunNextTrial again
+            }
         }
         #endregion
 
         #region Action methods
         private void Form1_Load(object sender, EventArgs e)
         {
+            KeyPreview = true;
+
             GetParticipantID();
         }
-
         private void GetParticipantID()
         {
             SetUpControl
                 (
-                ParticipantIDBox,
+                _participantIDBox,
                 "ParticipantIDBox",
                 new Size(200, 15),
                 Color.DarkSlateGray,
@@ -118,74 +183,60 @@ namespace LangBiasTester
                 ""
                 );
 
-            ParticipantIDBox.PlaceholderText = "Participant ID";
-            ParticipantIDBox.BorderStyle = BorderStyle.None;
+            _participantIDBox.PlaceholderText = "Participant ID";
+            _participantIDBox.BorderStyle = BorderStyle.None;
 
-            ParticipantIDBox.KeyDown += ParticipantIDBox_KeyDown;
+            _participantIDBox.KeyDown += ParticipantIDBox_KeyDown;
         }
-
         //TODO: displays instructional messages. Don't forget to shuffle language settings. Calls RunTraining()
         private void RunInstructions()
         {
             SetUpControl
                 (
-                Label,
+                _label,
                 "Instructions",
                 new Size(1920, 1080),
                 Color.Black,
-                new Font("Consolas", 48F, FontStyle.Bold, GraphicsUnit.Point, 0),
+                new Font("Arial", 48F, FontStyle.Bold, GraphicsUnit.Point, 0),
                 """
-                FR INSTRUCTIONS
+                FR/EN INSTRUCTIONS
                 
-                EN INSTRUCTIONS
+                EN/FR INSTRUCTIONS
                 """
                 );
             
-            Label.TextAlign = ContentAlignment.MiddleCenter;
+            _label.TextAlign = ContentAlignment.MiddleCenter;
 
             KeyDown += Instructions_KeyDown;
         }
-
         //TODO: runs a small training session (creates a small experiment with only two conditions -- 100/0, 0/100)
         private void RunTraining()
         {
-            MessageBox.Show("Starting Training"); //remove
-            ExperimentManager training = new()
-            {
-                // Change parameters so they come from settings.json
-                TimeBetweenTrials = 1,
-                ResponseWindow = 2,
-                Rounds = 2,
-                TrialsPerCondition = 5
-            };
+            // remove these, move to Settings object
 
-            training.Conditions.Add(new Condition(Lang.EN, Lang.FR, 1, 0));
-            training.Conditions.Add(new Condition(Lang.EN, Lang.FR, 0, 1));
+            MessageBox.Show("Running training"); //remove
 
-            KeyDown += CollectResponse;
+            _experiment.TimeBetweenTrials = 1;
+            _experiment.ResponseWindow = 2;
+            _experiment.Rounds = 1;
+            _experiment.TrialsPerCondition = 1;
+
+            _experiment.Conditions.Add(new Condition(Lang.EN, Lang.FR, 1, 0));
+            _experiment.Conditions.Add(new Condition(Lang.EN, Lang.FR, 0, 1));
+
+            _experiment.Initialize();
+
+            _currentTrial = _experiment.Trials.First;
+            _currentTimer = _experiment.ResponseWindow;
+
+            RunTrial(_currentTrial);
         }
-
-        //TODO: runs experiment, exports data. Maybe runs a "concluding" function.
-        private void RunMainExperiment() { }
+        private void EndExperiment()
+        {
+            MessageBox.Show("Experiment complete"); //substitute for label, add key event
+            Thread.Sleep(1000);
+            Application.Exit();
+        }
         #endregion
-
-        //TODO: gets keyboard/mouse input, sets Response.LanguageIdentified.
-        //Skips automatically after time specified by responseWindow.
-        //Might want to use "await Task.Delay()".
-        //Has to break as soon as it receives a response, or once time is up.
-        private async void CollectResponse(object sender, KeyEventArgs e)
-        {
-            Keys? responseKey = await KeyManager.WaitForKeyPressAsync(TimeSpan.FromSeconds(Experiment.ResponseWindow));
-            if (responseKey == Keys.Right || responseKey == Keys.Left)
-            {
-                RegisterResponse(responseKey);
-            }
-            else RegisterResponse(null);
-        }
-
-        private void RegisterResponse(Keys? responseKey)
-        {
-
-        }
     }
 }
