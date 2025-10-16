@@ -1,6 +1,5 @@
 using LangBiasTester.Infrastructure.Managers;
 using LangBiasTester.Infrastructure.Models;
-using LangBiasTester.Operators;
 using LangBiasTester.Operators.DataHandlers;
 using System.Security.Cryptography;
 using System.Windows.Forms;
@@ -12,14 +11,15 @@ namespace LangBiasTester
         //private KeyManager KeyManager;
         private readonly ExperimentManager _experiment;
         private readonly ParticipantInfo _participantInfo;
-        private Util _util;
+
+        private readonly Util _util;
+
         private TextBox _participantIDBox;
         private Label _label;
 
         private System.Windows.Forms.Timer _timer = new();
 
         private LinkedListNode<Trial>? _currentTrial;
-        private int _currentTimer;
 
         internal Form1(ExperimentManager experiment, Util util)
         {
@@ -35,8 +35,7 @@ namespace LangBiasTester
             ActiveControl = null;
         }
 
-
-        #region Control methods
+        #region Form Control Methods
         private void SetUpControl(Control control, string name, Size size, Color backColor, Font font, string text)
         {
             Controls.Add(control);
@@ -75,7 +74,7 @@ namespace LangBiasTester
 
             if (e.KeyCode == Keys.Enter && int.TryParse(_participantIDBox.Text, out participantID))
             {
-                if (participantID != _experiment._settings.adminID)
+                if (participantID != _experiment.Settings.AdminID)
                 {
                     _participantInfo.ID = participantID;
 
@@ -103,7 +102,7 @@ namespace LangBiasTester
 
             KeyDown -= Instructions_KeyDown;
 
-            RunTraining();
+            RunExperiment();
         }
         private void TimeUp(object sender, EventArgs e)
         {
@@ -112,6 +111,8 @@ namespace LangBiasTester
             MessageBox.Show("Time's up"); //remove
 
             _currentTrial.Value.Response = null;
+
+            Thread.Sleep(_experiment.Settings.TimeBetweenTrials*1000);
 
             RunTrial(_currentTrial.Next);
         }
@@ -125,13 +126,18 @@ namespace LangBiasTester
 
             _currentTrial.Value.Response = e.KeyCode;
 
+            Thread.Sleep(_experiment.Settings.TimeBetweenTrials * 1000);
+
             RunTrial(_currentTrial.Next);
         }
+        #endregion
+
+        #region Helper Methods
         private void TimerStart()
         {
             _timer.Enabled = true;
             _timer.Tick += TimeUp;
-            _timer.Interval = _currentTimer * 1000;
+            _timer.Interval = _experiment.Settings.ResponseWindow * 1000;
             _timer.Start();
         }
         private void TimerStop()
@@ -164,7 +170,7 @@ namespace LangBiasTester
         }
         #endregion
 
-        #region Action methods
+        #region Action Methods
         private void Form1_Load(object sender, EventArgs e)
         {
             KeyPreview = true;
@@ -210,24 +216,13 @@ namespace LangBiasTester
             KeyDown += Instructions_KeyDown;
         }
         //TODO: runs a small training session (creates a small experiment with only two conditions -- 100/0, 0/100)
-        private void RunTraining()
+        private void RunExperiment()
         {
-            // remove these, move to Settings object
+            MessageBox.Show("Running experiment"); //remove
 
-            MessageBox.Show("Running training"); //remove
-
-            _experiment.TimeBetweenTrials = 1;
-            _experiment.ResponseWindow = 2;
-            _experiment.Rounds = 1;
-            _experiment.TrialsPerCondition = 1;
-
-            _experiment.Conditions.Add(new Condition(Lang.EN, Lang.FR, 1, 0));
-            _experiment.Conditions.Add(new Condition(Lang.EN, Lang.FR, 0, 1));
-
-            _experiment.Initialize();
+            _experiment.Init();
 
             _currentTrial = _experiment.Trials.First;
-            _currentTimer = _experiment.ResponseWindow;
 
             RunTrial(_currentTrial);
         }

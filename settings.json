@@ -1,5 +1,16 @@
 {
+  "AdminID":  42,
+
+  "RunTraining": false,
+  "TrainingTrials": 2,
+
   "TimeBetweenTrials": 1,
   "ResponseWindow": 2,
-  "Rounds": 3
+  "TrialsPerCondition": 3,
+  "Rounds": 3,
+
+  "TestLang1": "EN",
+  "TestLang2":  "FR",
+  "IncludeControl": false,
+  "ControlLang":  "CN"
 }

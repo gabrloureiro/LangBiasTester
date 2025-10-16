@@ -11,23 +11,31 @@ namespace LangBiasTester.Infrastructure.Managers
 {
     internal class ExperimentManager
     {
-        private readonly DataExporter _dataExporter = new();
-        internal Settings _settings = new(42);
+        private readonly DataExporter _dataExporter;
+        internal Settings Settings;
 
-        private readonly ConditionManager _conditionManager = new();
-        private readonly TrialManager _trialManager = new();
+        private readonly ConditionManager _conditionManager;
+        private readonly TrialManager _trialManager;
 
-        internal List<Condition> Conditions = [];
-        internal LinkedList<Trial> Trials = [];
+        internal List<Condition> Conditions;
+        internal LinkedList<Trial> Trials;
 
-        internal int TimeBetweenTrials { get; set; }
-        internal int ResponseWindow { get; set; }
-        internal int Rounds { get; set; }
-        internal int TrialsPerCondition { get; set; }
-
-        internal void Initialize()
+        internal ExperimentManager(Settings settings)
         {
-            _trialManager.InitializeTrials(Trials, Conditions, TrialsPerCondition, Rounds, ResponseWindow);
+            _dataExporter = new();
+            Settings = settings;
+
+            _conditionManager = new();
+            _trialManager = new();
+
+            Conditions = [];
+            Trials = [];
+        }
+
+        internal void Init()
+        {
+            _conditionManager.Init(Conditions);
+            _trialManager.InitializeTrials(Trials, Conditions, Settings.TrialsPerCondition, Settings.Rounds, Settings.ResponseWindow);
         }
 
         internal void RunTrial(Trial trial)
