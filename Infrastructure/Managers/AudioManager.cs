@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.DirectoryServices;
 using System.Linq;
 using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using LangBiasTester.Infrastructure.Models;
 
@@ -10,19 +12,26 @@ namespace LangBiasTester.Infrastructure.Managers
 {
     internal class AudioManager
     {
-        internal List<Audio> PrepareMix(Condition condition, int snippetDuration)
+        internal List<Audio> PrepareMix(List<Audio> audios, Condition condition, int snippetDuration)
         {
-            List<Audio> selectedAudios = SelectAudiosMeetingCondition(condition);
+            var selectedAudios = SelectAudiosMeetingCondition(audios, condition);
             TrimAudioSnippets(selectedAudios, snippetDuration);
             SelectRandomTimestamp(selectedAudios, snippetDuration);
 
             return selectedAudios;
         }
+        private List<Audio> SelectAudiosMeetingCondition(List<Audio> audios, Condition condition)
+        {
+            List<Audio> selectedAudios = [];
 
-        //TODO: filters JSON for "langct" entries of the corresponding "lang" (both in the Condition.langs dictionary),
-        //adds each one to the "audios" list, setting FileName, TotalDuration, and Lang.
-        //Low-priority: make audio choice random
-        private List<Audio> SelectAudiosMeetingCondition(Condition condition) { return []; }
+            foreach (KeyValuePair<Lang, int> langEntry in condition.Langs)
+            {
+                var filteredAudios = audios.Where(audio => audio.Lang == langEntry.Key).Take(langEntry.Value).ToList(); //randomize (low-priority)
+                selectedAudios.AddRange(filteredAudios);
+            }
+
+            return selectedAudios;
+        }
         
         private void TrimAudioSnippets(List<Audio> audios, int snippetDuration)
         {
@@ -38,16 +47,8 @@ namespace LangBiasTester.Infrastructure.Managers
         {
             foreach (Audio audio in audios)
             {
-                audio.SnippetTimestamp = 0; //change later so it's random (choose random from 0 to (duration - snippetduration))
+                audio.SnippetTimestamp = 0; //change later so it's random (choose timestamp from 0 to (duration - snippetduration))
             }
-        }
-
-        //TODO: finds all audios in "Audios" in the folder through their "FileName"s and plays them all simultaneously,
-        //starting from their Timestamp, for the duration specified by their SnippetDuration.
-        internal void Play(List<Audio> audios)
-        {
-            // For testing: display a message
-            //MessageBox.Show("Audio: " + audios);
         }
     }
 }

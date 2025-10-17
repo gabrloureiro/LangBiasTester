@@ -8,12 +8,13 @@ namespace LangBiasTester.Infrastructure.Models
 {
     internal class Audio
     {
-        internal string FileName;
-        internal int SnippetTimestamp;
-        internal int SnippetDuration { get; set; }
-        internal int TotalDuration;
-        internal Lang Lang;
+        public string? FileName { get; set; }
+        public string? FileLocation { get; set; }
 
-        internal Audio() { }
+        public long Duration { get; set; }
+        public Lang Lang { get; set; }
+
+        public int SnippetTimestamp { get; set; }
+        public int SnippetDuration { get; set; }
     }
 }

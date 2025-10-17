@@ -12,6 +12,7 @@ namespace LangBiasTester.Operators
             ApplicationConfiguration.Initialize();
 
             Util util = new();
+            util.ExtractAudioMetadata();
             ExperimentManager experiment = new(util.ExtractSettings());
 
             Form1 form = new (experiment, util);

@@ -3,6 +3,7 @@ using LangBiasTester.Infrastructure.Models;
 using LangBiasTester.Operators.DataHandlers;
 using System.Security.Cryptography;
 using System.Windows.Forms;
+using NAudio.Wave;
 
 namespace LangBiasTester
 {
@@ -20,6 +21,8 @@ namespace LangBiasTester
         private System.Windows.Forms.Timer _timer = new();
 
         private LinkedListNode<Trial>? _currentTrial;
+        private int _currentRound;
+        private Dictionary<WaveStream, WaveOut>? _waveStreams;
 
         internal Form1(ExperimentManager experiment, Util util)
         {
@@ -78,29 +81,22 @@ namespace LangBiasTester
                 {
                     _participantInfo.ID = participantID;
 
-                    // Optionally, prevent the default "ding" sound or prevent the form from being submitted if it's the default accept button.
                     e.SuppressKeyPress = true;
 
                     _participantIDBox.KeyDown -= ParticipantIDBox_KeyDown;
                     Controls.Remove(_participantIDBox);
 
-                    MessageBox.Show("Participant ID registered: " + _participantInfo.ID.ToString()); //change when settings
-
                     RunInstructions();
                 }
-                //TODO: settings menu
-                else MessageBox.Show("Settings menu will go here");
+                else RunSettings();
             }
         }
         private void Instructions_KeyDown(object sender, KeyEventArgs e)
         {
             e.SuppressKeyPress = true;
+            KeyDown -= Instructions_KeyDown;
 
             Controls.Remove(_label);
-
-            MessageBox.Show("Instructions check"); //remove
-
-            KeyDown -= Instructions_KeyDown;
 
             RunExperiment();
         }
@@ -108,31 +104,57 @@ namespace LangBiasTester
         {
             ResetTrial();
 
-            MessageBox.Show("Time's up"); //remove
-
             _currentTrial.Value.Response = null;
 
             Thread.Sleep(_experiment.Settings.TimeBetweenTrials*1000);
 
-            RunTrial(_currentTrial.Next);
+            NextTrial();
         }
         private void CatchResponse(object sender, KeyEventArgs e)
         {
-            ResetTrial();
+            var response = e.KeyCode;
+            if (response == Keys.Right || response == Keys.Left)
+            {
+                ResetTrial();
 
+                e.SuppressKeyPress = true;
+
+                _currentTrial.Value.Response = response;
+
+                Thread.Sleep(_experiment.Settings.TimeBetweenTrials * 1000);
+
+                NextTrial();
+            }
+        }
+        private void StartNewRound(object sender, KeyEventArgs e)
+        {
             e.SuppressKeyPress = true;
+            KeyDown -= StartNewRound;
 
-            MessageBox.Show("Response: " + e.KeyCode); //remove
+            Controls.Remove(_label);
 
-            _currentTrial.Value.Response = e.KeyCode;
+            _currentRound++;
 
-            Thread.Sleep(_experiment.Settings.TimeBetweenTrials * 1000);
-
-            RunTrial(_currentTrial.Next);
+            RunTrial(_currentTrial);
+        }
+        private void Exit(object sender, KeyEventArgs e)
+        {
+            e.SuppressKeyPress = true;
+            KeyDown -= Exit;
+            Application.Exit();
         }
         #endregion
 
         #region Helper Methods
+        private void RunSettings()
+        //TODO: settings menu
+        {
+            var runSettings = MessageBox.Show("Load audio files information?", "Settings", MessageBoxButtons.YesNo);
+            if (runSettings == DialogResult.Yes)
+            {
+                _util.ExtractAudioMetadata();
+            }
+        }
         private void TimerStart()
         {
             _timer.Enabled = true;
@@ -150,23 +172,60 @@ namespace LangBiasTester
             TimerStop();
             _timer.Tick -= TimeUp;
             KeyDown -= CatchResponse;
+
+            foreach (KeyValuePair<WaveStream, WaveOut> stream in _waveStreams)
+            {
+                stream.Value.Stop();
+                stream.Value.Dispose();
+                stream.Key.Dispose();
+            }
         }
         private void RunTrial(LinkedListNode<Trial>? currentTrial)
         {
-            if (currentTrial == null)
+            _waveStreams = [];
+
+            foreach (Audio audio in currentTrial.Value.Audios)
+            {
+                var waveStream = new AudioFileReader(audio.FileLocation);
+                var waveOut = new WaveOut();
+                waveOut.Init(waveStream);
+
+                _waveStreams.Add(waveStream, waveOut);
+            }
+
+            foreach (KeyValuePair<WaveStream, WaveOut> stream in _waveStreams)
+            {
+                stream.Value.Play();
+            }
+
+            KeyDown += CatchResponse; // subscribes KeyDown event
+            TimerStart(); // subscribes timer end (Tick) event
+            // whichever is triggered first will cancel the other and call RunNextTrial again
+        }
+        private void NextTrial()
+        {
+            _currentTrial = _currentTrial.Next;
+
+            if (_currentTrial == null)
             {
                 EndExperiment();
             }
-            else
+            else if (_currentTrial.Value.Round != _currentRound)
             {
-                _experiment.RunTrial(currentTrial.Value);
-
-                MessageBox.Show("Running trial"); //remove
-
-                KeyDown += CatchResponse; // subscribes KeyDown event
-                TimerStart(); // subscribes timer end (Tick) event
-                // whichever is triggered first will cancel the other and call RunNextTrial again
+                SetUpControl //TODO write label
+                    (
+                    _label,
+                    "Instructions",
+                    new Size(1920, 1080),
+                    Color.Black,
+                    new Font("Arial", 48F, FontStyle.Bold, GraphicsUnit.Point, 0),
+                    """
+                    have a break have a kitkat
+                    """
+                    );
+                KeyDown += StartNewRound;
             }
+            else RunTrial(_currentTrial);
         }
         #endregion
 
@@ -174,6 +233,8 @@ namespace LangBiasTester
         private void Form1_Load(object sender, EventArgs e)
         {
             KeyPreview = true;
+
+            //TODO: Add function which checks if settings is configured to run in demo mode, run a small "readme" if so
 
             GetParticipantID();
         }
@@ -215,22 +276,31 @@ namespace LangBiasTester
 
             KeyDown += Instructions_KeyDown;
         }
-        //TODO: runs a small training session (creates a small experiment with only two conditions -- 100/0, 0/100)
         private void RunExperiment()
         {
-            MessageBox.Show("Running experiment"); //remove
+            MessageBox.Show("Running experiment"); //TODO remove
 
             _experiment.Init();
 
             _currentTrial = _experiment.Trials.First;
+            _currentRound = 0;
 
             RunTrial(_currentTrial);
         }
         private void EndExperiment()
         {
-            MessageBox.Show("Experiment complete"); //substitute for label, add key event
-            Thread.Sleep(1000);
-            Application.Exit();
+            SetUpControl //TODO write concluding message
+                (
+                _label,
+                "Instructions",
+                new Size(1920, 1080),
+                Color.Black,
+                new Font("Arial", 48F, FontStyle.Bold, GraphicsUnit.Point, 0),
+                """
+                ciao thx grazie buonaseratta
+                """
+                );
+            KeyDown += Exit;
         }
         #endregion
     }

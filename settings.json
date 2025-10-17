@@ -6,11 +6,23 @@
 
   "TimeBetweenTrials": 1,
   "ResponseWindow": 2,
-  "TrialsPerCondition": 3,
+
+  "TrialsPerCondition": 1,
   "Rounds": 3,
 
   "TestLang1": "EN",
   "TestLang2":  "FR",
   "IncludeControl": false,
-  "ControlLang":  "CN"
+  "ControlLang": "CN",
+
+  "Conditions": [
+    [ 100, 0 ],
+    [ 80, 20 ],
+    [ 60, 40 ],
+    [ 40, 60 ],
+    [ 20, 80 ],
+    [ 0, 100 ]
+  ],
+
+  "AudioFilePath": "../../../Audios/AudioMetadata.json"
 }

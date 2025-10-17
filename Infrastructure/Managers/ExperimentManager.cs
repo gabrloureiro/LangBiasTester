@@ -1,11 +1,13 @@
-﻿using System;
+﻿using LangBiasTester.Infrastructure.Models;
+using LangBiasTester.Operators;
+using LangBiasTester.Operators.DataHandlers;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
-using LangBiasTester.Infrastructure.Models;
-using LangBiasTester.Operators;
-using LangBiasTester.Operators.DataHandlers;
 
 namespace LangBiasTester.Infrastructure.Managers
 {
@@ -19,6 +21,7 @@ namespace LangBiasTester.Infrastructure.Managers
 
         internal List<Condition> Conditions;
         internal LinkedList<Trial> Trials;
+        private List<Audio>? Audios;
 
         internal ExperimentManager(Settings settings)
         {
@@ -34,13 +37,17 @@ namespace LangBiasTester.Infrastructure.Managers
 
         internal void Init()
         {
-            _conditionManager.Init(Conditions);
-            _trialManager.InitializeTrials(Trials, Conditions, Settings.TrialsPerCondition, Settings.Rounds, Settings.ResponseWindow);
-        }
+            Audios = JsonSerializer.Deserialize<List<Audio>>
+            (
+                File.ReadAllText(Settings.AudioFilePath),
+                new JsonSerializerOptions
+                {
+                    Converters = { new JsonStringEnumConverter() }
+                }
+            );
 
-        internal void RunTrial(Trial trial)
-        {
-            _trialManager.StartTrial(trial);
+            _conditionManager.Init(Conditions, Audios, Settings.TestLang1, Settings.TestLang2, Settings.Conditions);
+            _trialManager.Init(Trials, Conditions, Audios, Settings.TrialsPerCondition, Settings.Rounds, Settings.ResponseWindow);
         }
     }
 }

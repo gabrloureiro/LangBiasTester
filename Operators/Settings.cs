@@ -28,5 +28,8 @@ namespace LangBiasTester.Operators
         public Lang TestLang2 { get; set; }
         public bool IncludeControl { get; set; }
         public Lang ControlLang { get; set; }
+
+        public List<List<int>>? Conditions { get; set; }
+        public string? AudioFilePath { get; set; }
     }
 }
