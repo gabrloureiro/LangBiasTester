@@ -69,5 +69,12 @@ namespace LangBiasTester.Operators.DataHandlers
             var jsonString = JsonSerializer.Serialize(audios, _options);
             File.WriteAllText($"{audioDirectory}/AudioMetadata.json", jsonString);
         }
+        //TODO: generate a large number of sequences using the matlab script and save them to a JSON file.
+        //Each time the program runs, a new sequence is selected to generate the trials
+        //Use logic similar to ExtractAudioMetadata to run automatically when the program starts if the file is not found
+        internal void CollectT1I1Sequences()
+        {
+            //MLApp.MLApp matlab = new MLApp.MLApp();
+        }
     }
 }

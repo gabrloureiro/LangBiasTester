@@ -23,6 +23,8 @@ namespace LangBiasTester.Infrastructure.Managers
         }
 
         internal Settings Settings;
+
+        [JsonPropertyName("Settings")]
         public MiniSettings ExportSettings { get; set; }
 
         [JsonInclude]

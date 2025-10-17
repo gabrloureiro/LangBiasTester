@@ -220,7 +220,7 @@ namespace LangBiasTester
                 GenericLabel
                     (
                     """
-                    have a break have a kitkat
+                    Press any key to continue.
                     """
                     );
                 KeyDown += StartNewRound;
@@ -321,7 +321,11 @@ namespace LangBiasTester
                 Time between trials: {_experiment.Settings.TimeBetweenTrials} seconds
                 Response window: {_experiment.Settings.ResponseWindow} seconds
 
-                After the next screen, the trials will run as normal, as if this was already a proper run of the experiment. There are "rest screens" every time a round of trials ends.
+                Currently, the algorithm to generate trials based on T1I1 sequences is not yet operational.
+                Thus, at least as a minimum testing ground, the program is set up with a fixed number of trials per condition, and with a fixed number of conditions per round.
+                
+                After the next screen, the trials will run as normal, as if this was already a proper run of the experiment.
+                There are "rest screens" every time a round of trials ends.
                 
                 Press any key to proceed.
                 """

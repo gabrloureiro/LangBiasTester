@@ -24,15 +24,19 @@ namespace LangBiasTester.Infrastructure.Managers
         {
             List<Audio> selectedAudios = [];
 
+            Random random = new();
+
             foreach (KeyValuePair<Lang, int> langEntry in condition.Langs)
             {
-                var filteredAudios = audios.Where(audio => audio.Lang == langEntry.Key).Take(langEntry.Value).ToList(); //randomize (low-priority)
+                var randomizedAudios = audios;
+                random.Shuffle(randomizedAudios.ToArray());
+
+                var filteredAudios = randomizedAudios.Where(audio => audio.Lang == langEntry.Key).Take(langEntry.Value).ToList();
                 selectedAudios.AddRange(filteredAudios);
             }
 
             return selectedAudios;
         }
-        
         private void TrimAudioSnippets(List<Audio> audios, int snippetDuration)
         {
             foreach (Audio audio in audios)
@@ -40,9 +44,6 @@ namespace LangBiasTester.Infrastructure.Managers
                 audio.SnippetDuration = snippetDuration;
             }
         }
-
-        //TODO: selects random timestamp in each audio and registers it in its "timestamp" property.
-        //Uses snippetDuration to determine maximum starting point.
         private void SelectRandomTimestamp(List<Audio> audios, int snippetDuration)
         {
             var random = new Random();

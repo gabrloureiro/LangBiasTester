@@ -27,6 +27,18 @@ namespace LangBiasTester.Infrastructure.Managers
             int audioDuration
             )
         {
+            GenerateTrials(trials, conditions, allAudios, trialsPerCondition, rounds, audioDuration);
+        }
+        //Generates trials naïvely, simply assigning conditions.
+        internal void GenerateTrials(
+            LinkedList<Trial> trials,
+            List<Condition> conditions,
+            List<Audio> allAudios,
+            int trialsPerCondition,
+            int rounds,
+            int audioDuration
+            )
+        {
             int totalConditions = conditions.Count;
 
             // Generate trials one by one, assigning mixed audios, rounds, and conditions
@@ -46,16 +58,14 @@ namespace LangBiasTester.Infrastructure.Managers
             trials.OrderBy(trial => trial.Round);
         }
 
-        //TODO: implement T1I1 algorithm to shuffle "Trials" IN PLACE (see KW's matlab script)
-        internal void T1I1(List<Trial> trials)
+        //TODO: fetch sequence from T1I1 JSON and assign trials accordingly
+        internal void GenerateTrials(
+            LinkedList<Trial> trials,
+            List<Condition> conditions,
+            List<Audio> allAudios,
+            int audioDuration
+            )
         {
-            int rounds = trials[^1].Round;
-
-            for (int round = 0; round <= rounds; round++)
-            {
-                //shuffle filtered list
-                //perhaps have a "T1I1" function which just generates the indices -- get the total number of conditions from filtered list
-            }
         }
     }
 }
