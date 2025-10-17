@@ -2,13 +2,15 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace LangBiasTester.Infrastructure.Models
 {
     internal class Condition
     {
-        internal Dictionary<Lang, int> Langs;
+        [JsonInclude]
+        internal Dictionary<Lang, int> Langs { get; }
 
         internal Condition(Lang lang1, Lang lang2, int lang1ct, int lang2ct)
         {

@@ -1,5 +1,6 @@
 ﻿using LangBiasTester.Infrastructure.Managers;
 using LangBiasTester.Infrastructure.Models;
+using NAudio.Wave;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
@@ -25,16 +26,16 @@ namespace LangBiasTester.Operators.DataHandlers
 
         internal Settings ExtractSettings()
         {
-            var jsonString = File.ReadAllText("../../../settings.json"); //rewrite so it finds file instead of relying on specific path
+            var jsonString = File.ReadAllText("Settings.json"); //rewrite so it finds file instead of relying on specific path
 
             Settings settings = JsonSerializer.Deserialize<Settings>(jsonString, _options)
                 ?? throw new Exception("Could not configure experiment. Check that settings.json exists.");
 
             return settings;
         }
-        internal void ExtractAudioMetadata()
+        internal void ExtractAudioMetadata(Settings settings)
         {
-            var audioDirectory = new DirectoryInfo("../../../Audios");
+            var audioDirectory = (new DirectoryInfo(settings.AudioFilePath)).Parent;
 
             if (audioDirectory.GetFiles("AudioMetadata.json").Length > 0) return;
 
@@ -54,7 +55,7 @@ namespace LangBiasTester.Operators.DataHandlers
                                 FileName = audioFile.Name,
                                 FileLocation = audioFile.FullName,
 
-                                Duration = audioFile.Length, //fix so it's actually the duration, not the file size
+                                Duration = new AudioFileReader(audioFile.FullName).TotalTime,
                                 Lang = lang
                             };
 

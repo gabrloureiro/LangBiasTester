@@ -45,9 +45,14 @@ namespace LangBiasTester.Infrastructure.Managers
         //Uses snippetDuration to determine maximum starting point.
         private void SelectRandomTimestamp(List<Audio> audios, int snippetDuration)
         {
+            var random = new Random();
+
             foreach (Audio audio in audios)
             {
-                audio.SnippetTimestamp = 0; //change later so it's random (choose timestamp from 0 to (duration - snippetduration))
+                var duration = audio.Duration.TotalSeconds;
+                var maxStart = duration - snippetDuration;
+
+                audio.SnippetTimestamp = random.Next(0, (int)maxStart); 
             }
         }
     }

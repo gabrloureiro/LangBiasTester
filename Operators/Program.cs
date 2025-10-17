@@ -1,4 +1,5 @@
 using LangBiasTester.Infrastructure.Managers;
+using LangBiasTester.Infrastructure.Models;
 using LangBiasTester.Operators.DataHandlers;
 using System.Text.Json;
 
@@ -12,8 +13,10 @@ namespace LangBiasTester.Operators
             ApplicationConfiguration.Initialize();
 
             Util util = new();
-            util.ExtractAudioMetadata();
-            ExperimentManager experiment = new(util.ExtractSettings());
+            Settings settings = util.ExtractSettings();
+            util.ExtractAudioMetadata(settings);
+
+            ExperimentManager experiment = new(settings, new ParticipantInfo());
 
             Form1 form = new (experiment, util);
 

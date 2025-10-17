@@ -1,37 +1,38 @@
 using LangBiasTester.Infrastructure.Managers;
 using LangBiasTester.Infrastructure.Models;
+using static LangBiasTester.Infrastructure.Models.Lang;
 using LangBiasTester.Operators.DataHandlers;
 using System.Security.Cryptography;
 using System.Windows.Forms;
 using NAudio.Wave;
+using NAudio.Wave.SampleProviders;
+using LangBiasTester.Operators;
 
 namespace LangBiasTester
 {
     public partial class Form1 : Form
     {
-        //private KeyManager KeyManager;
         private readonly ExperimentManager _experiment;
-        private readonly ParticipantInfo _participantInfo;
 
         private readonly Util _util;
 
-        private TextBox _participantIDBox;
-        private Label _label;
+        private readonly TextBox _participantIDBox = new();
+        private readonly Label _label = new();
 
-        private System.Windows.Forms.Timer _timer = new();
+        private readonly System.Windows.Forms.Timer _timer = new();
+        private readonly Dictionary<Keys, string> _frenchKeysDict = new()
+        {
+            { Keys.Left, "Gauche" },
+            { Keys.Right, "Droite" }
+        };
 
         private LinkedListNode<Trial>? _currentTrial;
         private int _currentRound;
-        private Dictionary<WaveStream, WaveOut>? _waveStreams;
+        private Dictionary<OffsetSampleProvider, WaveOut>? _waveStreams;
 
         internal Form1(ExperimentManager experiment, Util util)
         {
             InitializeComponent();
-
-            //KeyManager = new KeyManager(this);
-            _participantInfo = new ParticipantInfo();
-            _participantIDBox = new TextBox();
-            _label = new Label();
 
             _experiment = experiment;
             _util = util;
@@ -79,14 +80,18 @@ namespace LangBiasTester
             {
                 if (participantID != _experiment.Settings.AdminID)
                 {
-                    _participantInfo.ID = participantID;
+                    _experiment.ParticipantInfo.ID = participantID;
 
                     e.SuppressKeyPress = true;
-
                     _participantIDBox.KeyDown -= ParticipantIDBox_KeyDown;
-                    Controls.Remove(_participantIDBox);
 
-                    RunInstructions();
+                    Controls.Remove(_participantIDBox);
+                    Controls.Remove(_label);
+
+                    _experiment.Init();
+
+                    if (_experiment.Settings.RunDemo) InstructionsTutorial();
+                    else RunInstructions();
                 }
                 else RunSettings();
             }
@@ -105,6 +110,7 @@ namespace LangBiasTester
             ResetTrial();
 
             _currentTrial.Value.Response = null;
+            _currentTrial.Value.ResponseLang = null;
 
             Thread.Sleep(_experiment.Settings.TimeBetweenTrials*1000);
 
@@ -120,6 +126,7 @@ namespace LangBiasTester
                 e.SuppressKeyPress = true;
 
                 _currentTrial.Value.Response = response;
+                _currentTrial.Value.ResponseLang = _experiment.Settings.LangKeyDictionary.Where(entry => entry.Value == response).First().Key;
 
                 Thread.Sleep(_experiment.Settings.TimeBetweenTrials * 1000);
 
@@ -149,11 +156,7 @@ namespace LangBiasTester
         private void RunSettings()
         //TODO: settings menu
         {
-            var runSettings = MessageBox.Show("Load audio files information?", "Settings", MessageBoxButtons.YesNo);
-            if (runSettings == DialogResult.Yes)
-            {
-                _util.ExtractAudioMetadata();
-            }
+            MessageBox.Show("This menu has not been implemented yet. To run custom settings, modify the Settings.json file, but ensure to NEVER modify it during or leading up to the actual experiment.");
         }
         private void TimerStart()
         {
@@ -173,11 +176,10 @@ namespace LangBiasTester
             _timer.Tick -= TimeUp;
             KeyDown -= CatchResponse;
 
-            foreach (KeyValuePair<WaveStream, WaveOut> stream in _waveStreams)
+            foreach (KeyValuePair<OffsetSampleProvider, WaveOut> stream in _waveStreams)
             {
                 stream.Value.Stop();
                 stream.Value.Dispose();
-                stream.Key.Dispose();
             }
         }
         private void RunTrial(LinkedListNode<Trial>? currentTrial)
@@ -186,14 +188,17 @@ namespace LangBiasTester
 
             foreach (Audio audio in currentTrial.Value.Audios)
             {
-                var waveStream = new AudioFileReader(audio.FileLocation);
+                var waveStream = new OffsetSampleProvider(new AudioFileReader(audio.FileLocation));
                 var waveOut = new WaveOut();
+
+                waveStream.SkipOver = TimeSpan.FromSeconds(audio.SnippetTimestamp);
+
                 waveOut.Init(waveStream);
 
                 _waveStreams.Add(waveStream, waveOut);
             }
 
-            foreach (KeyValuePair<WaveStream, WaveOut> stream in _waveStreams)
+            foreach (KeyValuePair<OffsetSampleProvider, WaveOut> stream in _waveStreams)
             {
                 stream.Value.Play();
             }
@@ -212,13 +217,8 @@ namespace LangBiasTester
             }
             else if (_currentTrial.Value.Round != _currentRound)
             {
-                SetUpControl //TODO write label
+                GenericLabel
                     (
-                    _label,
-                    "Instructions",
-                    new Size(1920, 1080),
-                    Color.Black,
-                    new Font("Arial", 48F, FontStyle.Bold, GraphicsUnit.Point, 0),
                     """
                     have a break have a kitkat
                     """
@@ -227,6 +227,108 @@ namespace LangBiasTester
             }
             else RunTrial(_currentTrial);
         }
+        private void GenericLabel(string text)
+        {
+            SetUpControl
+                (
+                _label,
+                "GenericLabel",
+                new Size(1440, 1080),
+                Color.Black,
+                new Font("Arial", 24F, FontStyle.Bold, GraphicsUnit.Point),
+                text
+                );
+
+            _label.TextAlign = ContentAlignment.MiddleCenter;
+        }
+        #endregion
+
+        #region Demo Events
+        private void StartDemoKey(object sender, KeyEventArgs e)
+        {
+            e.SuppressKeyPress = true;
+            KeyDown -= StartDemoKey;
+
+            Controls.Remove(_label);
+            if (e.KeyCode == Keys.Escape)
+            {
+                _experiment.Settings.RunDemo = false;
+            }
+
+            GetParticipantID();
+        }
+        private void InstructionsTutorialKey(object sender, KeyEventArgs e)
+        {
+            e.SuppressKeyPress = true;
+            KeyDown -= InstructionsTutorialKey;
+
+            Controls.Remove(_label);
+
+            RunInstructions();
+        }
+        #endregion
+
+        #region Demo Methods
+        private void StartDemo()
+        {
+            GenericLabel
+                (
+                """
+                You are running this application in "Demo" mode. Text like this will appear throughout to guide you through the program.
+                
+                To disable this function in following runs, set the property "RunDemo" in Settings.json to false. To disable it now, press the escape key.
+                
+                To continue, press any other key.
+                """
+                );
+
+            KeyDown += StartDemoKey;
+        }
+        private void IDScreenTutorial()
+        {
+            GenericLabel
+                (
+                $"""
+                In this screen, an identifier for the participant can be inserted in the field below. As is the case here, most screens were purposefully left with minimal text to avoid introducing any language bias.
+                This screen can also be used as an override of the standard settings, through the use of a specified ID. Currently, this ID is set to {_experiment.Settings.AdminID}, but it can also be modified in Settings.json.
+                To proceed, insert some number for the ID and hit the enter key.
+                """
+                );
+            _label.TextAlign = ContentAlignment.TopCenter;
+        }
+        private void InstructionsTutorial()
+        {
+            var conditions = _experiment.Settings.Conditions;
+            string conditionsString = "";
+
+            foreach (List<int> condition in conditions)
+            {
+                conditionsString += $"{condition[0]}/{condition[1]}, ";
+            }
+
+            conditionsString = conditionsString.TrimEnd(',', ' ');
+
+            GenericLabel
+                (
+                $"""
+                The next screen presents the participants with simple instructions for the task. The order of the languages displayed is randomized every time the program is run, as is the direction which the participant has to press in order to register an answer as either English or French.
+                All of these settings are also configurable within Settings.json, and they are recorded and exported along with the information and responses from the participant.
+                
+                At this point in the program, the trials have all been initialized with the following settings:
+                Conditions: {conditionsString}
+                Rounds: {_experiment.Settings.Rounds}
+                Trials per condition: {_experiment.Settings.TrialsPerCondition}
+                Time between trials: {_experiment.Settings.TimeBetweenTrials} seconds
+                Response window: {_experiment.Settings.ResponseWindow} seconds
+
+                After the next screen, the trials will run as normal, as if this was already a proper run of the experiment. There are "rest screens" every time a round of trials ends.
+                
+                Press any key to proceed.
+                """
+                );
+
+            KeyDown += InstructionsTutorialKey;
+        }
         #endregion
 
         #region Action Methods
@@ -234,9 +336,8 @@ namespace LangBiasTester
         {
             KeyPreview = true;
 
-            //TODO: Add function which checks if settings is configured to run in demo mode, run a small "readme" if so
-
-            GetParticipantID();
+            if (_experiment.Settings.RunDemo) StartDemo();
+            else GetParticipantID();
         }
         private void GetParticipantID()
         {
@@ -244,9 +345,9 @@ namespace LangBiasTester
                 (
                 _participantIDBox,
                 "ParticipantIDBox",
-                new Size(200, 15),
-                Color.DarkSlateGray,
-                new Font("Consolas", 9F, FontStyle.Bold, GraphicsUnit.Point, 0),
+                new Size(400, 60),
+                Color.DimGray,
+                new Font("Arial", 16F, FontStyle.Regular, GraphicsUnit.Point),
                 ""
                 );
 
@@ -254,22 +355,35 @@ namespace LangBiasTester
             _participantIDBox.BorderStyle = BorderStyle.None;
 
             _participantIDBox.KeyDown += ParticipantIDBox_KeyDown;
+
+            if (_experiment.Settings.RunDemo) IDScreenTutorial();
         }
-        //TODO: displays instructional messages. Don't forget to shuffle language settings. Calls RunTraining()
         private void RunInstructions()
         {
+            Dictionary<Lang, string> instructions = [];
+            instructions.Add(EN,
+                $"You will be presented with a series of sounds. Your task is to indicate whether what you hear is English (by pressing the {
+                    _experiment.Settings.LangKeyDictionary[EN].ToString().ToLower()
+                    } arrow key) or French (by pressing the {
+                    _experiment.Settings.LangKeyDictionary[FR].ToString().ToLower()
+                    } arrow key)."
+                );
+            instructions.Add(FR, //add an ENFR dictionary to properly display these
+                $"Vous serez presenté.e avec des différents sons. Votre rôle est d'indiquer si ce que vous entendiez est Français (en appuyant la flèche {
+                    _frenchKeysDict[_experiment.Settings.LangKeyDictionary[FR]].ToLower()
+                    }) ou Anglais (en appuyant la flèche {
+                    _frenchKeysDict[_experiment.Settings.LangKeyDictionary[EN]].ToLower()
+                    })."
+                );
+
             SetUpControl
                 (
                 _label,
                 "Instructions",
-                new Size(1920, 1080),
+                new Size(1440, 1080),
                 Color.Black,
-                new Font("Arial", 48F, FontStyle.Bold, GraphicsUnit.Point, 0),
-                """
-                FR/EN INSTRUCTIONS
-                
-                EN/FR INSTRUCTIONS
-                """
+                new Font("Arial", 32F, FontStyle.Bold, GraphicsUnit.Point, 0),
+                $"{instructions[_experiment.Settings.TestLang1]}\n\n{instructions[_experiment.Settings.TestLang2]}"
                 );
             
             _label.TextAlign = ContentAlignment.MiddleCenter;
@@ -278,10 +392,6 @@ namespace LangBiasTester
         }
         private void RunExperiment()
         {
-            MessageBox.Show("Running experiment"); //TODO remove
-
-            _experiment.Init();
-
             _currentTrial = _experiment.Trials.First;
             _currentRound = 0;
 
@@ -289,17 +399,17 @@ namespace LangBiasTester
         }
         private void EndExperiment()
         {
-            SetUpControl //TODO write concluding message
+            GenericLabel //TODO change message -- add french and display according to lang1 lang2 order
                 (
-                _label,
-                "Instructions",
-                new Size(1920, 1080),
-                Color.Black,
-                new Font("Arial", 48F, FontStyle.Bold, GraphicsUnit.Point, 0),
                 """
-                ciao thx grazie buonaseratta
+                The experiment is over. Thank you for your participation.
+                
+                Press any key to exit.
                 """
                 );
+
+            _experiment.ExportData();
+
             KeyDown += Exit;
         }
         #endregion

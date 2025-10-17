@@ -11,7 +11,7 @@ namespace LangBiasTester.Infrastructure.Models
         public string? FileName { get; set; }
         public string? FileLocation { get; set; }
 
-        public long Duration { get; set; }
+        public TimeSpan Duration { get; set; }
         public Lang Lang { get; set; }
 
         public int SnippetTimestamp { get; set; }

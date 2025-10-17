@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using LangBiasTester.Infrastructure.Managers;
 
@@ -9,10 +10,16 @@ namespace LangBiasTester.Infrastructure.Models
 {
     internal class Trial
     {
-        internal Condition Condition;
-        internal List<Audio> Audios;
+        [JsonInclude]
+        internal Condition Condition { get; set; }
+        [JsonInclude]
+        internal List<Audio> Audios { get; set; }
+        [JsonInclude]
         internal Keys? Response { get; set; }
-        internal int Round;
+        [JsonInclude]
+        internal Lang? ResponseLang { get; set; }
+        [JsonInclude]
+        internal int Round { get; }
         
         internal Trial(Condition condition, int round)
         {
