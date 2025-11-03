@@ -12,6 +12,7 @@ namespace LangBiasTester
 {
     public partial class Form1 : Form
     {
+        #region Properties
         private readonly ExperimentManager _experiment;
 
         private readonly Util _util;
@@ -38,6 +39,7 @@ namespace LangBiasTester
             _util = util;
             ActiveControl = null;
         }
+        #endregion
 
         #region Form Control Methods
         private void SetUpControl(Control control, string name, Size size, Color backColor, Font font, string text)
@@ -109,12 +111,16 @@ namespace LangBiasTester
         {
             ResetTrial();
 
-            _currentTrial.Value.Response = null;
-            _currentTrial.Value.ResponseLang = null;
+            if (_experiment.Settings.TestReactionTime)
+            {
+                _currentTrial.Value.Response = null;
+                _currentTrial.Value.ResponseLang = null;
 
-            Thread.Sleep(_experiment.Settings.TimeBetweenTrials*1000);
+                Thread.Sleep(_experiment.Settings.TimeBetweenTrials * 1000);
 
-            NextTrial();
+                NextTrial();
+            }
+            else KeyDown += CatchResponse;
         }
         private void CatchResponse(object sender, KeyEventArgs e)
         {
@@ -173,6 +179,7 @@ namespace LangBiasTester
         private void ResetTrial()
         {
             TimerStop();
+            
             _timer.Tick -= TimeUp;
             KeyDown -= CatchResponse;
 
@@ -203,9 +210,9 @@ namespace LangBiasTester
                 stream.Value.Play();
             }
 
-            KeyDown += CatchResponse; // subscribes KeyDown event
+            if (_experiment.Settings.TestReactionTime) KeyDown += CatchResponse; // subscribes KeyDown event
+            
             TimerStart(); // subscribes timer end (Tick) event
-            // whichever is triggered first will cancel the other and call RunNextTrial again
         }
         private void NextTrial()
         {
@@ -396,6 +403,16 @@ namespace LangBiasTester
         }
         private void RunExperiment()
         {
+            SetUpControl
+                (
+                _label,
+                "FixationCross",
+                new Size(1440, 1080),
+                Color.Black,
+                new Font("Arial", 48F, FontStyle.Regular, GraphicsUnit.Point),
+                "+"
+                );
+
             _currentTrial = _experiment.Trials.First;
             _currentRound = 0;
 

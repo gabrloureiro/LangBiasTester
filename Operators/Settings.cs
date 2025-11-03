@@ -18,6 +18,7 @@ namespace LangBiasTester.Operators
 
         public bool RunTraining { get; set; }
         public int TrainingTrials { get; set; }
+        public bool TestReactionTime { get; set; }
 
 
         public int TimeBetweenTrials { get; set; }
