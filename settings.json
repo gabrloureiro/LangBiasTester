@@ -1,8 +1,10 @@
 {
   "AdminID":  42,
+  "RunDemo": false,
 
   "RunTraining": false,
   "TrainingTrials": 2,
+  "TestReactionTime": false,
 
   "TimeBetweenTrials": 1,
   "ResponseWindow": 2,
