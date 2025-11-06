@@ -1,12 +1,12 @@
 using LangBiasTester.Infrastructure.Managers;
 using LangBiasTester.Infrastructure.Models;
-using static LangBiasTester.Infrastructure.Models.Lang;
 using LangBiasTester.Operators.DataHandlers;
+using LangBiasTester.Operators;
+using static LangBiasTester.Infrastructure.Models.Lang;
 using System.Security.Cryptography;
 using System.Windows.Forms;
 using NAudio.Wave;
 using NAudio.Wave.SampleProviders;
-using LangBiasTester.Operators;
 
 namespace LangBiasTester
 {
@@ -42,6 +42,19 @@ namespace LangBiasTester
         #endregion
 
         #region Form Control Methods
+        /// <summary>
+        /// Configures the specified control with the provided properties and adds it to the form's control collection.
+        /// </summary>
+        /// <remarks>This method sets the control's properties, including its name, size, location,
+        /// background color, font, and text. The control is centered within the form and added to the form's <see
+        /// cref="Control.ControlCollection"/>. The control's <see cref="Control.ForeColor"/> is set to <see
+        /// cref="Color.AntiqueWhite"/> by default.</remarks>
+        /// <param name="control">The <see cref="Control"/> to configure and add to the form.</param>
+        /// <param name="name">The name to assign to the control.</param>
+        /// <param name="size">The size of the control, specified as a <see cref="Size"/>.</param>
+        /// <param name="backColor">The background color to apply to the control.</param>
+        /// <param name="font">The font to use for the control's text.</param>
+        /// <param name="text">The text to display on the control.</param>
         private void SetUpControl(Control control, string name, Size size, Color backColor, Font font, string text)
         {
             Controls.Add(control);
@@ -62,6 +75,13 @@ namespace LangBiasTester
 
             control.TabIndex = 0;
         }
+        /// <summary>
+        /// Centers the specified control within its parent container.
+        /// </summary>
+        /// <remarks>This method adjusts the <see cref="Control.Location"/> property of the specified
+        /// control to position it at the center of its parent container. If the control does not have a parent, the
+        /// method does nothing.</remarks>
+        /// <param name="controlToCenter">The control to be centered. Must have a parent container.</param>
         private void CenterControl(Control controlToCenter)
         {
             if (controlToCenter.Parent != null)
@@ -69,6 +89,42 @@ namespace LangBiasTester
                 controlToCenter.Location = new Point(
                     (controlToCenter.Parent.ClientSize.Width / 2) - (controlToCenter.Width / 2),
                     (controlToCenter.Parent.ClientSize.Height / 2) - (controlToCenter.Height / 2));
+            }
+        }
+        /// <summary>
+        /// Centers multiple controls within their parent container and aligns them either vertically or horizontally.
+        /// </summary>
+        /// <param name="controlsToCenter">The controls to be centered and aligned.</param>
+        /// <param name="alignVertically">If true, aligns the controls vertically; otherwise, aligns them horizontally.</param>
+        private void CenterControl(IEnumerable<Control> controlsToCenter, bool alignVertically)
+        {
+            if (controlsToCenter == null || !controlsToCenter.Any()) return;
+
+            var parent = controlsToCenter.First().Parent;
+            if (parent == null) return;
+
+            int totalWidth = 0, totalHeight = 0;
+            foreach (var control in controlsToCenter)
+            {
+                totalWidth += control.Width;
+                totalHeight += control.Height;
+            }
+
+            int startX = (parent.ClientSize.Width / 2) - (alignVertically ? controlsToCenter.First().Width / 2 : totalWidth / 2);
+            int startY = (parent.ClientSize.Height / 2) - (alignVertically ? totalHeight / 2 : controlsToCenter.First().Height / 2);
+
+            foreach (var control in controlsToCenter)
+            {
+                control.Location = new Point(startX, startY);
+
+                if (alignVertically)
+                {
+                    startY += control.Height;
+                }
+                else
+                {
+                    startX += control.Width;
+                }
             }
         }
         #endregion
@@ -160,9 +216,54 @@ namespace LangBiasTester
 
         #region Helper Methods
         private void RunSettings()
-        //TODO: settings menu
         {
-            MessageBox.Show("This menu has not been implemented yet. To run custom settings, modify the Settings.json file, but ensure to NEVER modify it during or leading up to the actual experiment.");
+            Button audioJsonButton = new()
+            {
+                Text = "Collect Audio Metadata",
+                AutoSize = true,
+                AutoSizeMode = AutoSizeMode.GrowAndShrink
+            };
+
+            Button createStaticMixButton = new()
+            {
+                Text = "Create Static Audio Mixes",
+                AutoSize = true,
+                AutoSizeMode = AutoSizeMode.GrowAndShrink
+            };
+
+            GroupBox utilButtons = new()
+            {
+                Text = "Program setup",
+                AutoSize = true,
+                AutoSizeMode = AutoSizeMode.GrowAndShrink
+            };
+
+            utilButtons.Controls.Add(audioJsonButton);
+            utilButtons.Controls.Add(createStaticMixButton);
+
+            CenterControl([audioJsonButton, createStaticMixButton], true);
+
+            audioJsonButton.Click += (s, e) =>
+            {
+                _util.ExtractAudioMetadata(_experiment.Settings, true);
+                MessageBox.Show("AudioMetadata JSON generated or rewritten.");
+            };
+
+            createStaticMixButton.Click += (s, e) =>
+            {
+                _util.CreateStaticAudioMixes(_experiment.Settings);
+            };
+
+            Form settingsForm = new()
+            {
+                AutoSize = true,
+                AutoSizeMode = AutoSizeMode.GrowAndShrink
+            };
+
+            settingsForm.Controls.Add(utilButtons);
+            CenterControl(utilButtons);
+
+            settingsForm.Show();
         }
         private void TimerStart()
         {

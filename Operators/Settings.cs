@@ -41,6 +41,7 @@ namespace LangBiasTester.Operators
 
         public List<List<int>>? Conditions { get; set; }
         public string? AudioFilePath { get; set; }
+        public bool UseStaticMixes { get; set; }
 
         [JsonIgnore]
         internal Dictionary<Lang, Keys>? LangKeyDictionary { get; set; }

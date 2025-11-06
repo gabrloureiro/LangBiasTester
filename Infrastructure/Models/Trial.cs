@@ -13,7 +13,9 @@ namespace LangBiasTester.Infrastructure.Models
         [JsonInclude]
         internal Condition Condition { get; set; }
         [JsonInclude]
-        internal List<Audio> Audios { get; set; }
+        internal List<Audio>? Audios { get; set; }
+        [JsonInclude]
+        internal Audio? MixedAudio { get; set; }
         [JsonInclude]
         internal Keys? Response { get; set; }
         [JsonInclude]

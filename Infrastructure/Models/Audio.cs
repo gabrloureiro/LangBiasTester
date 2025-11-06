@@ -13,6 +13,7 @@ namespace LangBiasTester.Infrastructure.Models
 
         public TimeSpan Duration { get; set; }
         public Lang Lang { get; set; }
+        public VoiceGender VoiceGender { get; set; }
 
         public int SnippetTimestamp { get; set; }
         public int SnippetDuration { get; set; }
