@@ -20,12 +20,17 @@ namespace LangBiasTester.Infrastructure.Managers
         /// </summary>
         /// <param name="Audios">The list of files to mix</param>
         /// <param name="folder">Folder to save the .wav file to</param>
-        internal static void CreateStaticAudioMix(List<Audio> Audios, string folder, TextBox progressBox)
+        internal static Audio CreateStaticAudioMix(List<Audio> AudiosToMix, string folder, TextBox progressBox)
         {
+            Audio mixedAudio = new()
+            {
+                MixLangs = []
+            };
+
             List<AudioFileReader> audioFiles = [];
             var combiningAudios = "";
 
-            foreach (Audio audio in Audios)
+            foreach (Audio audio in AudiosToMix)
             {
                 audioFiles.Add(new AudioFileReader(audio.FileLocation));
                 combiningAudios += $"{audio.FileName}, ";
@@ -35,15 +40,24 @@ namespace LangBiasTester.Infrastructure.Managers
 
             var mixer = new MixingSampleProvider(audioFiles);
 
-            var audioLangs = Audios.Select(audio => audio.Lang).Distinct().ToList();
+            var audioLangs = AudiosToMix.Select(audio => audio.Lang).Distinct().ToList();
             var langCountString = "";
 
             foreach (Lang lang in audioLangs)
             {
-                langCountString += $"{lang}{Audios.Count(audio => audio.Lang == lang)}";
+                var langAudioCount = AudiosToMix.Count(audio => audio.Lang == lang);
+
+                mixedAudio.MixLangs.Add(lang, langAudioCount);
+
+                langCountString += $"{lang}{langAudioCount}";
             }
 
+            mixedAudio.FileName = langCountString;
+
             WaveFileWriter.CreateWaveFile16($"{folder}/{langCountString}.wav", mixer);
+
+            mixedAudio.FileLocation = new FileInfo($"{folder}/{langCountString}.wav").FullName;
+            mixedAudio.Duration = new AudioFileReader(mixedAudio.FileLocation).TotalTime;
 
             foreach (AudioFileReader reader in audioFiles)
             {
@@ -54,6 +68,8 @@ namespace LangBiasTester.Infrastructure.Managers
 
             progressBox.AppendText(Environment.NewLine);
             progressBox.AppendText(progressText);
+
+            return mixedAudio;
         }
 
         /// <summary>

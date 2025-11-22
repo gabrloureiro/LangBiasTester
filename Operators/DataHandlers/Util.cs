@@ -1,19 +1,8 @@
 ﻿using LangBiasTester.Infrastructure.Managers;
 using LangBiasTester.Infrastructure.Models;
 using NAudio.Wave;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
-using System.DirectoryServices;
-using System.Drawing.Text;
-using System.Linq;
-using System.Runtime.InteropServices;
-using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using System.Threading.Tasks;
-using System.Windows.Forms.Design;
-using System.Xml.Linq;
 
 namespace LangBiasTester.Operators.DataHandlers
 {
@@ -28,9 +17,11 @@ namespace LangBiasTester.Operators.DataHandlers
         /// <summary>
         /// Extracts and deserializes application settings from a JSON file.
         /// </summary>
+        /// 
         /// <remarks>This method reads the contents of a JSON file and deserializes it into a <see
         /// cref="Settings"/> object. The file must exist and contain valid JSON that matches the structure of the <see
         /// cref="Settings"/> class.</remarks>
+        /// 
         /// <returns>A <see cref="Settings"/> object populated with the deserialized data from the JSON file.</returns>
         /// <exception cref="Exception">Thrown if the deserialization process results in a null <see cref="Settings"/> object.</exception>
         internal Settings ExtractSettings()
@@ -47,22 +38,24 @@ namespace LangBiasTester.Operators.DataHandlers
         /// Extracts metadata from audio files located in the specified directory and generates a JSON file containing
         /// the metadata.
         /// </summary>
+        /// 
         /// <remarks>This method scans the directory specified in <paramref name="settings"/> for audio
         /// files organized by language and voice gender. It extracts metadata such as file name, file location,
         /// duration, language, and voice gender for each audio file with a `.wav` extension. The extracted metadata is
         /// serialized into a JSON file named "AudioMetadata.json" and saved in the parent directory of the audio files.
         /// If "AudioMetadata.json" already exists in the directory and <paramref name="overrideExisting"> is set to false,
         /// the method exits without performing any operations.</remarks>
+        /// 
         /// <param name="settings">The settings object containing the path to the directory where audio files are stored.</param>
         /// <exception cref="Exception">Thrown if the directory structure does not follow the expected folder naming conventions for language or
         /// voice gender.</exception>
-        internal void ExtractAudioMetadata(Settings settings, bool overrideExisting)
+        internal void ExtractRawAudioMetadata(Settings settings, bool overrideExisting)
         {
-            var audioDirectory = (new DirectoryInfo(settings.AudioFilePath)).Parent;
+            var audioDirectory = (new DirectoryInfo(settings.RawAudioFilePath)).Parent;
 
-            if (File.Exists(settings.AudioFilePath) && !overrideExisting) return;
+            if (File.Exists(settings.RawAudioFilePath) && !overrideExisting) return;
 
-            if (audioDirectory.GetDirectories().Length == 0) throw new Exception("Language directories not found.");
+            if (audioDirectory.GetDirectories().Length == 0) throw new Exception("Audio directories not found.");
 
             List<Audio> audios = [];
 
@@ -88,29 +81,33 @@ namespace LangBiasTester.Operators.DataHandlers
                             Lang = lang,
                             VoiceGender = gender
                         };
-
                         audios.Add(metadata);
                     }
                 }
             }
-
             var jsonString = JsonSerializer.Serialize(audios, _options);
-            File.WriteAllText($"{audioDirectory}/AudioMetadata.json", jsonString);
+            File.WriteAllText($"{audioDirectory}/RawAudioMetadata.json", jsonString);
         }
 
         /// <summary>
         /// Creates static audio mixes based on the provided settings and audio data.
         /// </summary>
+        /// 
         /// <remarks>This method reads audio data from a JSON file specified in the <paramref name="settings"/> parameter.
         /// It filters the audio data by gender and language, then creates static audio mixes of different proportions of each language
-        /// by combining an equal number of female and male voices from each language.</remarks>
+        /// by combining an equal number of female and male voices from each language. Finally, it generates a JSON file with the
+        /// specifications of the mixed audios.</remarks>
+        /// 
         /// <param name="settings">The configuration settings that specify the audio file path and test languages.</param>
         /// <exception cref="Exception">Thrown if the audio data cannot be deserialized from the specified file or if the file does not exist.</exception>
         internal void CreateStaticAudioMixes(Settings settings)
         {
-            if (!File.Exists(settings.AudioFilePath)) ExtractAudioMetadata(settings, true);
+            List<Audio> mixedAudios = [];
+            var mixedAudioDirectory = (new DirectoryInfo(settings.MixedAudioFilePath)).Parent;
 
-            var audioJsonString = File.ReadAllText(settings.AudioFilePath);
+            if (!File.Exists(settings.RawAudioFilePath)) ExtractRawAudioMetadata(settings, true);
+
+            var audioJsonString = File.ReadAllText(settings.RawAudioFilePath);
 
             List<Audio> audioJson = JsonSerializer.Deserialize<IEnumerable<Audio>>(audioJsonString, _options).ToList()
                 ?? throw new Exception("Could not configure experiment. Check that AudioMetadata.json exists.");
@@ -125,36 +122,42 @@ namespace LangBiasTester.Operators.DataHandlers
                 && (audio.Lang == settings.TestLang1 || audio.Lang == settings.TestLang2)
                 )];
 
-            if (femaleAudios.Count != maleAudios.Count) throw new Exception("Voice gender distribution is not even.");
+            if (femaleAudios.Count != maleAudios.Count) throw new Exception($"Voice gender distribution is not equal ({femaleAudios.Count} female audios and {maleAudios.Count} male audios).");
 
             var totalAudios = femaleAudios.Count + maleAudios.Count;
 
             var lang2FemaleCount = 0;
             var lang2MaleCount = 0;
 
-            var audioFolderString = Directory.GetParent(settings.AudioFilePath).ToString() + "/Mixed";
+            var audioFolderString = Directory.GetParent(settings.RawAudioFilePath).ToString() + "/Mixed";
             Directory.CreateDirectory(audioFolderString);
 
             var progressText = CreateProgressForm();
 
             for (int i = 0; i <= totalAudios/2; i++)
             {
-                List<Audio> mixAudios = [];
+                List<Audio> audiosToMix = [];
 
-                mixAudios.AddRange(femaleAudios.Where(audio => audio.Lang == settings.TestLang1).Take(femaleAudios.Count/2 - lang2FemaleCount));
-                mixAudios.AddRange(maleAudios.Where(audio => audio.Lang == settings.TestLang1).Take(maleAudios.Count / 2 - lang2MaleCount));
+                audiosToMix.AddRange(femaleAudios.Where(audio => audio.Lang == settings.TestLang1).Take(femaleAudios.Count/2 - lang2FemaleCount));
+                audiosToMix.AddRange(maleAudios.Where(audio => audio.Lang == settings.TestLang1).Take(maleAudios.Count / 2 - lang2MaleCount));
 
-                mixAudios.AddRange(femaleAudios.Where(audio => audio.Lang == settings.TestLang2).Take(lang2FemaleCount));
-                mixAudios.AddRange(maleAudios.Where(audio => audio.Lang == settings.TestLang2).Take(lang2MaleCount));
+                audiosToMix.AddRange(femaleAudios.Where(audio => audio.Lang == settings.TestLang2).Take(lang2FemaleCount));
+                audiosToMix.AddRange(maleAudios.Where(audio => audio.Lang == settings.TestLang2).Take(lang2MaleCount));
 
                 if (i % 2 == 0) lang2FemaleCount++;
                 else lang2MaleCount++;
 
-                AudioManager.CreateStaticAudioMix(mixAudios, audioFolderString, progressText);
+                mixedAudios.Add(AudioManager.CreateStaticAudioMix(audiosToMix, audioFolderString, progressText));
             }
 
             progressText.AppendText(Environment.NewLine);
             progressText.AppendText("Static audio mixes created.");
+
+            var jsonString = JsonSerializer.Serialize(mixedAudios, _options);
+            File.WriteAllText($"{mixedAudioDirectory}/MixedAudioMetadata.json", jsonString);
+
+            progressText.AppendText(Environment.NewLine);
+            progressText.AppendText("MixedAudioMetadata.json written.");
         }
         private TextBox CreateProgressForm()
         {
@@ -191,14 +194,6 @@ namespace LangBiasTester.Operators.DataHandlers
             progressForm.Show();
 
             return progressText;
-        }
-
-        //TODO: generate a large number of sequences using the matlab script and save them to a JSON file.
-        //Each time the program runs, a new sequence is selected to generate the trials
-        //Use logic similar to ExtractAudioMetadata to run automatically when the program starts if the file is not found
-        internal void CollectT1I1Sequences()
-        {
-            //MLApp.MLApp matlab = new MLApp.MLApp();
         }
     }
 }

@@ -30,6 +30,7 @@ namespace LangBiasTester
         private LinkedListNode<Trial>? _currentTrial;
         private int _currentRound;
         private Dictionary<OffsetSampleProvider, WaveOut>? _waveStreams;
+        #endregion
 
         internal Form1(ExperimentManager experiment, Util util)
         {
@@ -39,8 +40,7 @@ namespace LangBiasTester
             _util = util;
             ActiveControl = null;
         }
-        #endregion
-
+        
         #region Form Control Methods
         /// <summary>
         /// Configures the specified control with the provided properties and adds it to the form's control collection.
@@ -245,7 +245,7 @@ namespace LangBiasTester
 
             audioJsonButton.Click += (s, e) =>
             {
-                _util.ExtractAudioMetadata(_experiment.Settings, true);
+                _util.ExtractRawAudioMetadata(_experiment.Settings, true);
                 MessageBox.Show("AudioMetadata JSON generated or rewritten.");
             };
 
@@ -409,9 +409,9 @@ namespace LangBiasTester
             var conditions = _experiment.Settings.Conditions;
             string conditionsString = "";
 
-            foreach (List<int> condition in conditions)
+            foreach (KeyValuePair<int, int> condition in conditions)
             {
-                conditionsString += $"{condition[0]}/{condition[1]}, ";
+                conditionsString += $"{condition.Key}/{condition.Value}, ";
             }
 
             conditionsString = conditionsString.TrimEnd(',', ' ');

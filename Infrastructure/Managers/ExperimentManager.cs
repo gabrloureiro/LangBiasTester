@@ -13,6 +13,7 @@ namespace LangBiasTester.Infrastructure.Managers
 {
     internal class ExperimentManager
     {
+        // Settings properties
         internal struct MiniSettings
         {
             public Lang Lang1 { get; set; }
@@ -20,6 +21,7 @@ namespace LangBiasTester.Infrastructure.Managers
             public bool ControlIncluded { get; set; }
             public Keys Lang1Direction { get; set; }
             public Keys Lang2Direction { get; set; }
+            public List<int> ConditionSequence { get; set; }
         }
 
         internal Settings Settings;
@@ -27,43 +29,43 @@ namespace LangBiasTester.Infrastructure.Managers
         [JsonPropertyName("Settings")]
         public MiniSettings ExportSettings { get; set; }
 
+        // Participant Info
         [JsonInclude]
         internal ParticipantInfo ParticipantInfo { get; set; }
 
-        private readonly ConditionManager _conditionManager;
-        private readonly TrialManager _trialManager;
-
+        // Lists
         [JsonInclude]
         public LinkedList<Trial> Trials { get; private set; }
         private readonly List<Condition> Conditions;
         private List<Audio>? Audios;
 
+        private JsonSerializerOptions _jsonSerializerOptions;
+
         internal ExperimentManager(Settings settings, ParticipantInfo participantInfo)
         {
             Settings = settings;
 
-            _conditionManager = new();
-            _trialManager = new();
-
             Conditions = [];
             Trials = [];
             ParticipantInfo = participantInfo;
+
+            _jsonSerializerOptions = new JsonSerializerOptions
+            {
+                Converters = { new JsonStringEnumConverter() },
+                WriteIndented = true
+            };
         }
+        
         internal void Init()
         {
             ShuffleLangs();
 
-            Audios = JsonSerializer.Deserialize<List<Audio>>
-            (
-                File.ReadAllText(Settings.AudioFilePath),
-                new JsonSerializerOptions
-                {
-                    Converters = { new JsonStringEnumConverter() }
-                }
-            );
+            Audios = JsonSerializer.Deserialize<List<Audio>>(File.ReadAllText(Settings.RawAudioFilePath),_jsonSerializerOptions);
 
-            _conditionManager.Init(Conditions, Audios, Settings.TestLang1, Settings.TestLang2, Settings.Conditions);
-            _trialManager.Init(Trials, Conditions, Audios, Settings.TrialsPerCondition, Settings.Rounds, Settings.ResponseWindow);
+            ConditionManager.Init(Conditions, Audios, Settings.TestLang1, Settings.TestLang2, Settings.Conditions);
+            TrialManager.Init(Trials, Conditions, Audios, Settings.ResponseWindow, ParticipantInfo.ID);
+
+            //set ConditionSequence for export based on what TrialManager.Init generates
         }
         private void ShuffleLangs()
         {
@@ -110,15 +112,8 @@ namespace LangBiasTester.Infrastructure.Managers
                 Lang2Direction = Settings.Lang2Direction
             };
 
-            var jsonString = JsonSerializer.Serialize
-                (
-                    this,
-                    new JsonSerializerOptions()
-                    {
-                        Converters = { new JsonStringEnumConverter() },
-                        WriteIndented = true 
-                    }
-                );
+            var jsonString = JsonSerializer.Serialize(this, _jsonSerializerOptions);
+
             File.WriteAllText($"Outputs/{ParticipantInfo.ID}.json", jsonString);
         }
     }

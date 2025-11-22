@@ -21,13 +21,11 @@ namespace LangBiasTester.Infrastructure.Models
         [JsonInclude]
         internal Lang? ResponseLang { get; set; }
         [JsonInclude]
-        internal int Round { get; }
+        internal int? Round { get; set; }
         
-        internal Trial(Condition condition, int round)
+        internal Trial(Condition condition)
         {
-            Audios = [];
             Condition = condition;
-            Round = round;
         }
     }
 }
