@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace LangBiasTester.Infrastructure.Models
+namespace LangBiasTester.Operators
 {
     internal class T1I1
     {
@@ -24,15 +24,18 @@ namespace LangBiasTester.Infrastructure.Models
         {
             var random = new Random(Seed);
 
-            return [..
-                new List<int>(ConditionCount * ConditionCount)
-                .Select(_ => random.Next(1, ConditionCount))
-                ];
+            var sequenceSize = ConditionCount * ConditionCount;
+
+            var starterSequence = Enumerable.Range(1, sequenceSize)
+                .Select(_ => random.Next(1, ConditionCount+1))
+                .ToList();
+
+            return starterSequence;
         }
 
         public List<int> GenerateSequence()
         {
-            if (!ValidateSequence(Sequence))
+            if (ValidateSequence(Sequence))
             {
                 TweakSequence();
                 return GenerateSequence();

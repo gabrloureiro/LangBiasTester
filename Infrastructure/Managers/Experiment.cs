@@ -1,17 +1,11 @@
 ﻿using LangBiasTester.Infrastructure.Models;
 using LangBiasTester.Operators;
-using LangBiasTester.Operators.DataHandlers;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using System.Threading.Tasks;
 
 namespace LangBiasTester.Infrastructure.Managers
 {
-    internal class ExperimentManager
+    internal class Experiment
     {
         // Settings properties
         internal struct MiniSettings
@@ -27,7 +21,7 @@ namespace LangBiasTester.Infrastructure.Managers
         internal Settings Settings;
 
         [JsonPropertyName("Settings")]
-        public MiniSettings ExportSettings { get; set; }
+        internal MiniSettings ExportSettings { get; set; }
 
         // Participant Info
         [JsonInclude]
@@ -35,18 +29,20 @@ namespace LangBiasTester.Infrastructure.Managers
 
         // Lists
         [JsonInclude]
-        public LinkedList<Trial> Trials { get; private set; }
+        internal LinkedList<Trial> Trials { get; private set; }
         private readonly List<Condition> Conditions;
-        private List<Audio>? Audios;
+        private readonly List<Audio> Audios;
 
         private JsonSerializerOptions _jsonSerializerOptions;
+        private int randomizerSeed;
 
-        internal ExperimentManager(Settings settings, ParticipantInfo participantInfo)
+        internal Experiment(Settings settings, ParticipantInfo participantInfo)
         {
             Settings = settings;
 
             Conditions = [];
             Trials = [];
+            Audios = [];
             ParticipantInfo = participantInfo;
 
             _jsonSerializerOptions = new JsonSerializerOptions
@@ -58,12 +54,35 @@ namespace LangBiasTester.Infrastructure.Managers
         
         internal void Init()
         {
+            randomizerSeed = ParticipantInfo.ID;
+
             ShuffleLangs();
 
-            Audios = JsonSerializer.Deserialize<List<Audio>>(File.ReadAllText(Settings.RawAudioFilePath),_jsonSerializerOptions);
+            var audioFilePath = Settings.UseStaticMixes ? Settings.MixedAudioFilePath : Settings.RawAudioFilePath;
 
-            ConditionManager.Init(Conditions, Audios, Settings.TestLang1, Settings.TestLang2, Settings.Conditions);
-            TrialManager.Init(Trials, Conditions, Audios, Settings.ResponseWindow, ParticipantInfo.ID);
+            Audios.AddRange(JsonSerializer.Deserialize<List<Audio>>(File.ReadAllText(audioFilePath),_jsonSerializerOptions));
+
+            // If using static mixes, all information is already contained in the audio objects.
+            // Otherwise, generate conditions one by one using information in settings.
+            if (Settings.UseStaticMixes)
+            {
+                ConditionManager.Init(Conditions, Audios);
+            }
+            else
+            {
+                ConditionManager.Init(Conditions, Audios, Settings.TestLang1, Settings.TestLang2, Settings.Conditions);
+            }
+
+            // If using T1I1, provide only trials list, conditions list, audios list, response window, and the randomizer seed.
+            // Otherwise, provide information about specific number of trials and rounds as well.
+            if (Settings.UseT1I1Shuffling)
+            {
+                TrialManager.Init(Trials, Conditions, Audios, randomizerSeed, Settings.ResponseWindow);
+            }
+            else
+            {
+                TrialManager.Init(Trials, Conditions, Audios, randomizerSeed, Settings.ResponseWindow, Settings.TrialsPerCondition, Settings.Rounds);
+            }
 
             //set ConditionSequence for export based on what TrialManager.Init generates
         }
@@ -71,7 +90,7 @@ namespace LangBiasTester.Infrastructure.Managers
         {
             if (Settings.ShuffleTextLang)
             {
-                Random random = new();
+                Random random = new(randomizerSeed);
                 var lang1 = Settings.TestLang1;
                 var lang2 = Settings.TestLang2;
 
@@ -84,7 +103,7 @@ namespace LangBiasTester.Infrastructure.Managers
             }
             if (Settings.ShuffleLangDirection)
             {
-                Random random = new();
+                Random random = new(randomizerSeed);
                 var dir1 = Settings.Lang1Direction;
                 var dir2 = Settings.Lang2Direction;
 

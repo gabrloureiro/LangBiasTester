@@ -1,6 +1,6 @@
 ﻿namespace LangBiasTester
 {
-    partial class Form1
+    partial class ProgramView
     {
         /// <summary>
         ///  Required designer variable.
@@ -29,7 +29,7 @@
         private void InitializeComponent()
         {
             // 
-            // Form1
+            // ProgramView
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
@@ -40,9 +40,9 @@
             Margin = new Padding(3, 2, 3, 2);
             MaximizeBox = false;
             MinimizeBox = false;
-            Name = "Form1";
+            Name = "ProgramView";
             ShowIcon = false;
-            Text = "Form1";
+            Text = "ProgramView";
             WindowState = FormWindowState.Maximized;
             Load += Form1_Load;
             ResumeLayout(false);

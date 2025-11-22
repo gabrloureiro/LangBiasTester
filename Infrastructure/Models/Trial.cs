@@ -13,9 +13,7 @@ namespace LangBiasTester.Infrastructure.Models
         [JsonInclude]
         internal Condition Condition { get; set; }
         [JsonInclude]
-        internal List<Audio>? Audios { get; set; }
-        [JsonInclude]
-        internal Audio? MixedAudio { get; set; }
+        internal List<Audio> Audios { get; set; }
         [JsonInclude]
         internal Keys? Response { get; set; }
         [JsonInclude]
@@ -25,6 +23,7 @@ namespace LangBiasTester.Infrastructure.Models
         
         internal Trial(Condition condition)
         {
+            Audios = [];
             Condition = condition;
         }
     }

@@ -18,5 +18,10 @@ namespace LangBiasTester.Infrastructure.Models
             Langs.Add(lang1, lang1ct);
             Langs.Add(lang2, lang2ct);
         }
+
+        internal Condition(Dictionary<Lang, int> langs)
+        {
+            Langs = langs;
+        }
     }
 }

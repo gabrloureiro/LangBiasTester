@@ -1,31 +1,36 @@
 ﻿using LangBiasTester.Infrastructure.Models;
+using LangBiasTester.Operators;
 
 namespace LangBiasTester.Infrastructure.Managers
 {
     internal class TrialManager
     {   
-        internal static void Init(LinkedList<Trial> trials, List<Condition> conditions, List<Audio> mixedAudios, int audioDuration, int seed)
+        internal static void Init(LinkedList<Trial> trials, List<Condition> conditions, List<Audio> mixedAudios, int seed, int audioDuration)
         {
-            var conditionSequence = new T1I1(seed, conditions.Count).GenerateSequence();
+            var trialSequence = new T1I1(seed, conditions.Count).GenerateSequence();
 
-            for (int i = 0; i < conditionSequence.Count; i++)
+            for (int i = 0; i < trialSequence.Count; i++)
             {
-                var conditionNumber = conditionSequence[i];
+                var conditionIndex = trialSequence[i] - 1;
 
-                var newTrial = new Trial(conditions[conditionNumber])
+                var newTrial = new Trial(conditions[conditionIndex])
                 {
-                    MixedAudio = mixedAudios[i] //change later based on how mixedAudios and conditions end up being related
+                    Condition = conditions[conditionIndex],
+                    Round = i / conditions.Count
                 };
+
+                newTrial.Audios.Add(mixedAudios[conditionIndex]);
+                newTrial.Audios[0].SnippetDuration = audioDuration;
 
                 trials.AddLast(newTrial);
             }
         }
 
-        internal static void Init(LinkedList<Trial> trials, List<Condition> conditions, List<Audio> allAudios, int audioDuration, int trialsPerCondition, int rounds)
+        internal static void Init(LinkedList<Trial> trials, List<Condition> conditions, List<Audio> allAudios, int seed, int audioDuration, int trialsPerCondition, int rounds)
         {
             int totalConditions = conditions.Count;
 
-            var audioManager = new AudioManager();
+            var audioManager = new AudioManager(seed);
 
             // Generate trials one by one, assigning mixed audios, rounds, and conditions
             for (int trialNumber = 0; trialNumber < trialsPerCondition * totalConditions * rounds; trialNumber++)
@@ -42,7 +47,7 @@ namespace LangBiasTester.Infrastructure.Managers
                 trials.AddLast(newTrial);
             }
 
-            trials.OrderBy(trial => trial.Round); // this is why shuffling isn't working
+            trials.OrderBy(trial => trial.Round);
         }
     }
 }

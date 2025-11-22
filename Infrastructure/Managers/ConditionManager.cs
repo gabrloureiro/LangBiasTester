@@ -10,6 +10,15 @@ namespace LangBiasTester.Infrastructure.Managers
 {
     internal class ConditionManager
     {
+        // generates conditions based on mixed audio information (one condition per audio mix)
+        internal static void Init(List<Condition> conditions, List<Audio> audios)
+        {
+            foreach (Audio audio in audios)
+            {
+                Condition newCondition = new(audio.MixLangs);
+                conditions.Add(newCondition);
+            }
+        }
         // generates conditions based on explicit ratios given (e.g., 100/0, 75/25, 50/50, 25/75, 0/100)
         internal static void Init(List<Condition> conditions, List<Audio> audioList, Lang lang1, Lang lang2, Dictionary<int, int> explicitRatios)
         {
