@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using LangBiasTester.Infrastructure.Models;
-using static LangBiasTester.Infrastructure.Models.Lang;
+﻿using LangBiasTester.Infrastructure.Models;
 
 namespace LangBiasTester.Infrastructure.Managers
 {

@@ -4,25 +4,25 @@ using LangBiasTester.Operators.DataHandlers;
 using static LangBiasTester.Infrastructure.Models.Lang;
 using NAudio.Wave;
 using NAudio.Wave.SampleProviders;
+using LangBiasTester.View;
 
 namespace LangBiasTester
 {
     public partial class ProgramView : Form
     {
         #region Properties
-        private readonly Experiment _experiment;
+        internal readonly Experiment _experiment;
 
-        private readonly Util _util;
+        internal readonly Util _util;
 
-        private readonly TextBox _participantIDBox = new();
-        private readonly Label _label = new();
+        private readonly TextBox _participantIDBox;
+        internal readonly Label _label;
 
-        private readonly System.Windows.Forms.Timer _timer = new();
-        private readonly Dictionary<Keys, string> _frenchKeysDict = new()
-        {
-            { Keys.Left, "Gauche" },
-            { Keys.Right, "Droite" }
-        };
+        private readonly SettingsForm _settingsMenu;
+        private readonly DemoRunner _demo;
+
+        private readonly System.Windows.Forms.Timer _timer;
+        private readonly Dictionary<Keys, string> _frenchKeysDict;
 
         private LinkedListNode<Trial>? _currentTrial;
         private int _currentRound;
@@ -31,6 +31,11 @@ namespace LangBiasTester
         private int _programStage;
         #endregion
 
+        /// <summary>
+        /// Initializes a new instance of the ProgramView class with the specified experiment and utility objects.
+        /// </summary>
+        /// <param name="experiment">The Experiment instance that contains all information about trials, conditions, and settings. Cannot be null.</param>
+        /// <param name="util">The Util instance that supplies utility functions or services required by the view. Cannot be null.</param>
         internal ProgramView(Experiment experiment, Util util)
         {
             InitializeComponent();
@@ -38,50 +43,81 @@ namespace LangBiasTester
             _experiment = experiment;
             _util = util;
             ActiveControl = null;
-            _programStage = -1;
+            _programStage = 0;
+
+            _participantIDBox = new();
+            _label = new();
+            _settingsMenu = new(_experiment.Settings, _util);
+            _demo = new(this);
+
+            _timer = new();
+
+            _frenchKeysDict = new()
+            {
+                { Keys.Left, "Gauche" },
+                { Keys.Right, "Droite" }
+            };
+        }
+        private void Form1_Load(object sender, EventArgs e)
+        {
+            KeyPreview = true;
+            ProgramControl();
         }
 
-        private void ProgramControl()
+        /// <summary>
+        /// Advances the program to the next stage in the experiment workflow, executing the appropriate actions for the
+        /// current stage.
+        /// </summary>
+        /// <remarks>
+        /// This method manages the experiment's progression by incrementing the internal stage
+        /// counter and invoking stage-specific logic, such as running tutorials, collecting participant information, or
+        /// ending the experiment. The actions performed depend on the current stage and whether the experiment is
+        /// running in demo mode.
+        /// </remarks>
+        internal void ProgramControl()
         {
             _programStage++;
             var runningDemoMode = _experiment.Settings.RunDemo;
 
+            if (runningDemoMode)
+            {
+                _demo.DemoControl(_programStage);
+                return;
+            }
+
             switch (_programStage)
             {
-                case 0:
-                    if (runningDemoMode) StartDemo();
-                    else ProgramControl();
+                case 1: GetParticipantID();
                     break;
 
-                case 1:
-                    if (runningDemoMode) IDScreenTutorial();
-                    GetParticipantID();
+                case 2: RunInstructions();
                     break;
 
-                case 2:
-                    if (runningDemoMode) InstructionsTutorial();
-                    else RunInstructions();
+                case 3: RunExperiment();
                     break;
 
-                case 3:
-                    RunExperiment();
+                case 4: EndExperiment();
                     break;
 
-                case 4:
-                    EndExperiment();
-                    break;
-
-                case 5:
-                    Application.Exit();
+                case 5: Application.Exit();
                     break;
             }
         }
 
         #region Action Methods
-        private void GetParticipantID()
+        /// <summary>
+        /// Initializes and configures the participant ID input control.
+        /// </summary>
+        /// <remarks>
+        /// This method sets up the participant ID text box with appropriate size, style,
+        /// placeholder text, and event handlers. It should be called during the form's initialization to ensure the
+        /// participant ID input is ready for user interaction.
+        /// </remarks>
+        internal void GetParticipantID()
         {
-            SetUpControl
+            FormManager.SetUpControl
                 (
+                this,
                 _participantIDBox,
                 "ParticipantIDBox",
                 new Size(400, 60),
@@ -95,18 +131,30 @@ namespace LangBiasTester
 
             _participantIDBox.KeyDown += RegisterIDBoxInput;
         }
-        private void RunInstructions()
+        /// <summary>
+        /// Presents the participants with instructions. Order and direction of languages are randomized.
+        /// </summary>
+        /// <remarks>
+        /// Also subscribes the dismiss instructions event.
+        /// </remarks>
+        internal void RunInstructions()
         {
-            Dictionary<Lang, string> instructions = [];
-            instructions.Add(EN,
-                $"You will be presented with a series of sounds. Your task is to indicate whether what you hear is English (by pressing the {_experiment.Settings.LangKeyDictionary[EN].ToString().ToLower()} arrow key) or French (by pressing the {_experiment.Settings.LangKeyDictionary[FR].ToString().ToLower()} arrow key)."
-                );
-            instructions.Add(FR, //add an ENFR dictionary to properly display these
-                $"Vous serez presenté.e avec des différents sons. Votre rôle est d'indiquer si ce que vous entendiez est Français (en appuyant la flèche {_frenchKeysDict[_experiment.Settings.LangKeyDictionary[FR]].ToLower()}) ou Anglais (en appuyant la flèche {_frenchKeysDict[_experiment.Settings.LangKeyDictionary[EN]].ToLower()})."
-                );
+            Dictionary<Lang, string> instructions = new()
+            {
+                { 
+                    EN, $"You will be presented with a series of sounds. Your task is to indicate whether what you hear is English (by pressing the" +
+                    $"{_experiment.Settings.LangKeyDictionary[EN].ToString().ToLower()} arrow key) or French (by pressing the {_experiment.Settings.LangKeyDictionary[FR].ToString().ToLower()} arrow key)."
+                },
+                {
+                    FR, $"Vous serez presenté.e avec des différents sons. Votre rôle est d'indiquer si ce que vous entendiez est Français (en appuyant la flèche" +
+                    $"{_frenchKeysDict[_experiment.Settings.LangKeyDictionary[FR]].ToLower()}) ou Anglais (en appuyant la flèche {_frenchKeysDict[_experiment.Settings.LangKeyDictionary[EN]].ToLower()})."
 
-            SetUpControl
+                }
+            };
+
+            FormManager.SetUpControl
                 (
+                this,
                 _label,
                 "Instructions",
                 new Size(1440, 1080),
@@ -119,10 +167,19 @@ namespace LangBiasTester
 
             KeyDown += DismissInstructions;
         }
-        private void RunExperiment()
+        /// <summary>
+        /// Initializes and starts the experiment by setting up the initial display and running the first trial.
+        /// </summary>
+        /// <remarks>
+        /// This method should be called to begin the experiment sequence. It resets the current
+        /// trial and round counters before starting the first trial. Subsequent trials are managed
+        /// internally.
+        /// </remarks>
+        internal void RunExperiment()
         {
-            SetUpControl
+            FormManager.SetUpControl
                 (
+                this,
                 _label,
                 "FixationCross",
                 new Size(1440, 1080),
@@ -136,10 +193,20 @@ namespace LangBiasTester
 
             RunTrial(_currentTrial);
         }
-        private void EndExperiment()
+        /// <summary>
+        /// Performs cleanup and finalization tasks at the end of the experiment, including displaying a completion
+        /// message, exporting experiment data, and preparing the application to exit.
+        /// </summary>
+        /// <remarks>
+        /// Call this method when the experiment has concluded to ensure that all results are
+        /// saved and the participant is informed that the session is complete. After this method is called, pressing
+        /// any key will exit the application.
+        /// </remarks>
+        internal void EndExperiment()
         {
-            GenericLabel //TODO change message -- add french and display according to lang1 lang2 order
+            FormManager.GenericLabel //TODO change message -- add french and display according to lang1 lang2 order
                 (
+                _label,
                 """
                 The experiment is over. Thank you for your participation.
                 
@@ -163,7 +230,7 @@ namespace LangBiasTester
             
             if (participantID == _experiment.Settings.AdminID)
             {
-                OpenSettingsMenu();
+                _settingsMenu.Run();
                 return;
             }
 
@@ -243,6 +310,12 @@ namespace LangBiasTester
         #endregion
 
         #region Trial Methods
+        /// <summary>
+        /// Resets the trial state by stopping timers, detaching event handlers, and disposing of audio streams.
+        /// </summary>
+        /// <remarks>Call this method to clean up resources and prepare for a new trial. This method
+        /// should be invoked before starting a new trial to ensure that previous state and resources do not interfere
+        /// with subsequent trials.</remarks>
         private void ResetTrial()
         {
             TimerStop();
@@ -256,6 +329,17 @@ namespace LangBiasTester
                 stream.Value.Dispose();
             }
         }
+        /// <summary>
+        /// Executes a single trial by preparing and playing all associated audio snippets, and sets up
+        /// response collection.
+        /// </summary>
+        /// <remarks>
+        /// If the experiment is configured to test reaction time, this method subscribes to both
+        /// keydown and timer events to capture the participant's response. All audio snippets for the trial are played
+        /// simultaneously unless mixed audio is used, in which case only one stream is created.
+        /// </remarks>
+        /// <param name="currentTrial">The linked list node representing the current trial to run. Must not be null and must contain a valid trial
+        /// with associated audio snippets.</param>
         private void RunTrial(LinkedListNode<Trial>? currentTrial)
         {
             _waveStreams = [];
@@ -287,6 +371,13 @@ namespace LangBiasTester
             if (_experiment.Settings.TestReactionTime) KeyDown += CatchResponse;
             TimerStart();
         }
+        /// <summary>
+        /// Advances to the next trial in the sequence, starting a new round if necessary.
+        /// </summary>
+        /// <remarks>
+        /// If the next trial belongs to a new round, the method prompts the participant to continue and
+        /// sets up the event handler to start the new round. Otherwise, it runs the next trial immediately.
+        /// </remarks>
         private void NextTrial()
         {
             _currentTrial = _currentTrial.Next;
@@ -294,8 +385,9 @@ namespace LangBiasTester
             if (_currentTrial == null) ProgramControl();
             else if (_currentTrial.Value.Round != _currentRound)
             {
-                GenericLabel
+                FormManager.GenericLabel
                     (
+                    _label,
                     """
                     Press any key to continue.
                     """
@@ -325,243 +417,5 @@ namespace LangBiasTester
             _currentTrial.Value.ResponseLang = _experiment.Settings.LangKeyDictionary.Where(entry => entry.Value == response).First().Key;
         }
         #endregion
-
-        #region Form Control Methods
-        private void Form1_Load(object sender, EventArgs e)
-        {
-            KeyPreview = true;
-            ProgramControl();
-        }
-        /// <summary>
-        /// Configures the specified control with the provided properties and adds it to the form's control collection.
-        /// </summary>
-        /// <param name="control">The <see cref="Control"/> to configure and add to the form.</param>
-        /// <param name="name">The name to assign to the control.</param>
-        /// <param name="size">The size of the control, specified as a <see cref="Size"/>.</param>
-        /// <param name="backColor">The background color to apply to the control.</param>
-        /// <param name="font">The font to use for the control's text.</param>
-        /// <param name="text">The text to display on the control.</param>
-        private void SetUpControl(Control control, string name, Size size, Color backColor, Font font, string text)
-        {
-            Controls.Add(control);
-            SuspendLayout();
-
-            control.Name = name;
-
-            control.Anchor = AnchorStyles.None;
-            control.Size = size;
-            control.Location = new Point(0, 0);
-            CenterControl(control);
-
-            control.BackColor = backColor;
-            control.ForeColor = Color.AntiqueWhite;
-
-            control.Text = text;
-            control.Font = font;
-
-            control.TabIndex = 0;
-        }
-        /// <summary>
-        /// Centers the specified control within its parent container.
-        /// </summary>
-        /// <param name="controlToCenter">The control to be centered. Must have a parent container.</param>
-        private void CenterControl(Control controlToCenter)
-        {
-            if (controlToCenter.Parent != null)
-            {
-                controlToCenter.Location = new Point(
-                    (controlToCenter.Parent.ClientSize.Width / 2) - (controlToCenter.Width / 2),
-                    (controlToCenter.Parent.ClientSize.Height / 2) - (controlToCenter.Height / 2));
-            }
-        }
-        /// <summary>
-        /// Centers multiple controls within their parent container and aligns them either vertically or horizontally.
-        /// </summary>
-        /// <param name="controlsToCenter">The controls to be centered and aligned.</param>
-        /// <param name="alignVertically">If true, aligns the controls vertically; otherwise, aligns them horizontally.</param>
-        private void CenterControl(IEnumerable<Control> controlsToCenter, bool alignVertically)
-        {
-            if (controlsToCenter == null || !controlsToCenter.Any()) return;
-
-            var parent = controlsToCenter.First().Parent;
-            if (parent == null) return;
-
-            int totalWidth = 0, totalHeight = 0;
-            foreach (var control in controlsToCenter)
-            {
-                totalWidth += control.Width;
-                totalHeight += control.Height;
-            }
-
-            int startX = (parent.ClientSize.Width / 2) - (alignVertically ? controlsToCenter.First().Width / 2 : totalWidth / 2);
-            int startY = (parent.ClientSize.Height / 2) - (alignVertically ? totalHeight / 2 : controlsToCenter.First().Height / 2);
-
-            foreach (var control in controlsToCenter)
-            {
-                control.Location = new Point(startX, startY);
-
-                if (alignVertically)
-                {
-                    startY += control.Height;
-                }
-                else
-                {
-                    startX += control.Width;
-                }
-            }
-        }
-        private void GenericLabel(string text)
-        {
-            SetUpControl
-                (
-                _label,
-                "GenericLabel",
-                new Size(1440, 1080),
-                Color.Black,
-                new Font("Arial", 24F, FontStyle.Bold, GraphicsUnit.Point),
-                text
-                );
-
-            _label.TextAlign = ContentAlignment.MiddleCenter;
-        }
-        private void OpenSettingsMenu()
-        {
-            Button audioJsonButton = new()
-            {
-                Text = "Collect Audio Metadata",
-                AutoSize = true,
-                AutoSizeMode = AutoSizeMode.GrowAndShrink
-            };
-
-            Button createStaticMixButton = new()
-            {
-                Text = "Create Static Audio Mixes",
-                AutoSize = true,
-                AutoSizeMode = AutoSizeMode.GrowAndShrink
-            };
-
-            GroupBox utilButtons = new()
-            {
-                Text = "Program setup",
-                AutoSize = true,
-                AutoSizeMode = AutoSizeMode.GrowAndShrink
-            };
-
-            utilButtons.Controls.Add(audioJsonButton);
-            utilButtons.Controls.Add(createStaticMixButton);
-
-            CenterControl([audioJsonButton, createStaticMixButton], true);
-
-            audioJsonButton.Click += (s, e) =>
-            {
-                _util.ExtractRawAudioMetadata(_experiment.Settings, true);
-                MessageBox.Show("AudioMetadata JSON generated or rewritten.");
-            };
-
-            createStaticMixButton.Click += (s, e) =>
-            {
-                _util.CreateStaticAudioMixes(_experiment.Settings);
-            };
-
-            Form settingsForm = new()
-            {
-                AutoSize = true,
-                AutoSizeMode = AutoSizeMode.GrowAndShrink
-            };
-
-            settingsForm.Controls.Add(utilButtons);
-            CenterControl(utilButtons);
-
-            settingsForm.Show();
-        }
-        #endregion
-
-        #region Demo Events
-        private void StartDemoKey(object sender, KeyEventArgs e)
-        {
-            e.SuppressKeyPress = true;
-            KeyDown -= StartDemoKey;
-
-            Controls.Remove(_label);
-            if (e.KeyCode == Keys.Escape)
-            {
-                _experiment.Settings.RunDemo = false;
-            }
-
-            ProgramControl();
-        }
-        private void InstructionsTutorialKey(object sender, KeyEventArgs e)
-        {
-            e.SuppressKeyPress = true;
-            KeyDown -= InstructionsTutorialKey;
-
-            Controls.Remove(_label);
-
-            RunInstructions();
-        }
-        #endregion
-
-        #region Demo Methods
-        private void StartDemo()
-        {
-            GenericLabel
-                (
-                """
-                You are running this application in "Demo" mode. Text like this will appear throughout to guide you through the program.
-                
-                To disable this function in following runs, set the property "RunDemo" in Settings.json to false. To disable it now, press the escape key.
-                
-                To continue, press any other key.
-                """
-                );
-
-            KeyDown += StartDemoKey;
-        }
-        private void IDScreenTutorial()
-        {
-            GenericLabel
-                (
-                $"""
-                In this screen, an identifier for the participant can be inserted in the field below. As is the case here, most screens were purposefully left with minimal text to avoid introducing any language bias.
-                This screen can also be used as an override of the standard settings, through the use of a specified ID. Currently, this ID is set to {_experiment.Settings.AdminID}, but it can also be modified in Settings.json.
-                To proceed, insert some number for the ID and hit the enter key.
-                """
-                );
-            _label.TextAlign = ContentAlignment.TopCenter;
-        }
-        private void InstructionsTutorial()
-        {
-            var conditions = _experiment.Settings.Conditions;
-            string conditionsString = "";
-
-            foreach (KeyValuePair<int, int> condition in conditions)
-            {
-                conditionsString += $"{condition.Key}/{condition.Value}, ";
-            }
-
-            conditionsString = conditionsString.TrimEnd(',', ' ');
-
-            GenericLabel
-                (
-                $"""
-                The next screen presents the participants with simple instructions for the task. The order of the languages displayed is randomized every time the program is run, as is the direction which the participant has to press in order to register an answer as either English or French.
-                All of these settings are also configurable within Settings.json, and they are recorded and exported along with the information and responses from the participant.
-                
-                At this point in the program, the trials have all been initialized with the following settings:
-                Conditions: {conditionsString}
-                Time between trials: {_experiment.Settings.TimeBetweenTrials} seconds
-                Response window: {_experiment.Settings.ResponseWindow} seconds
-                                
-                After the next screen, the trials will run as normal, as if this was already a proper run of the experiment.
-                There are "rest screens" every time a round of trials ends.
-                
-                Press any key to proceed.
-                """
-                );
-
-            KeyDown += InstructionsTutorialKey;
-        }
-        #endregion
-
     }
 }

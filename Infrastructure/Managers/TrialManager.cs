@@ -7,7 +7,9 @@ namespace LangBiasTester.Infrastructure.Managers
     {   
         internal static void Init(LinkedList<Trial> trials, List<Condition> conditions, List<Audio> mixedAudios, int seed, int audioDuration)
         {
-            var trialSequence = new T1I1(seed, conditions.Count).GenerateSequence();
+            var t1i1 = new T1I1(seed, conditions.Count);
+            
+            var trialSequence = t1i1.GenerateSequence();
 
             for (int i = 0; i < trialSequence.Count; i++)
             {

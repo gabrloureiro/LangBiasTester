@@ -1,0 +1,302 @@
+[
+  {
+    "FileName": "cut_Fem1-japan politics.wav",
+    "FileLocation": "C:\\Users\\loure\\OneDrive\\Documentos\\Uni docs\\2025_F\\COGS 444\\LangBiasTester\\config\\audio\\CN\\Female\\cut_Fem1-japan politics.wav",
+    "Duration": "00:01:00",
+    "Lang": "CN",
+    "MixLangs": null,
+    "VoiceGender": "Female",
+    "SnippetTimestamp": 0,
+    "SnippetDuration": 0
+  },
+  {
+    "FileName": "cut_Fem2-Hainan.wav",
+    "FileLocation": "C:\\Users\\loure\\OneDrive\\Documentos\\Uni docs\\2025_F\\COGS 444\\LangBiasTester\\config\\audio\\CN\\Female\\cut_Fem2-Hainan.wav",
+    "Duration": "00:01:00",
+    "Lang": "CN",
+    "MixLangs": null,
+    "VoiceGender": "Female",
+    "SnippetTimestamp": 0,
+    "SnippetDuration": 0
+  },
+  {
+    "FileName": "cut_Fem3-Art gallery.wav",
+    "FileLocation": "C:\\Users\\loure\\OneDrive\\Documentos\\Uni docs\\2025_F\\COGS 444\\LangBiasTester\\config\\audio\\CN\\Female\\cut_Fem3-Art gallery.wav",
+    "Duration": "00:01:00",
+    "Lang": "CN",
+    "MixLangs": null,
+    "VoiceGender": "Female",
+    "SnippetTimestamp": 0,
+    "SnippetDuration": 0
+  },
+  {
+    "FileName": "cut_Fem4-Shanghai meeting.wav",
+    "FileLocation": "C:\\Users\\loure\\OneDrive\\Documentos\\Uni docs\\2025_F\\COGS 444\\LangBiasTester\\config\\audio\\CN\\Female\\cut_Fem4-Shanghai meeting.wav",
+    "Duration": "00:01:00",
+    "Lang": "CN",
+    "MixLangs": null,
+    "VoiceGender": "Female",
+    "SnippetTimestamp": 0,
+    "SnippetDuration": 0
+  },
+  {
+    "FileName": "cut_Fem5-Patrimoine West Xia graves.wav",
+    "FileLocation": "C:\\Users\\loure\\OneDrive\\Documentos\\Uni docs\\2025_F\\COGS 444\\LangBiasTester\\config\\audio\\CN\\Female\\cut_Fem5-Patrimoine West Xia graves.wav",
+    "Duration": "00:01:00",
+    "Lang": "CN",
+    "MixLangs": null,
+    "VoiceGender": "Female",
+    "SnippetTimestamp": 0,
+    "SnippetDuration": 0
+  },
+  {
+    "FileName": "cut_Male1-USA politics.wav",
+    "FileLocation": "C:\\Users\\loure\\OneDrive\\Documentos\\Uni docs\\2025_F\\COGS 444\\LangBiasTester\\config\\audio\\CN\\Male\\cut_Male1-USA politics.wav",
+    "Duration": "00:01:00",
+    "Lang": "CN",
+    "MixLangs": null,
+    "VoiceGender": "Male",
+    "SnippetTimestamp": 0,
+    "SnippetDuration": 0
+  },
+  {
+    "FileName": "cut_Male2-Shanghai land sale.wav",
+    "FileLocation": "C:\\Users\\loure\\OneDrive\\Documentos\\Uni docs\\2025_F\\COGS 444\\LangBiasTester\\config\\audio\\CN\\Male\\cut_Male2-Shanghai land sale.wav",
+    "Duration": "00:01:00",
+    "Lang": "CN",
+    "MixLangs": null,
+    "VoiceGender": "Male",
+    "SnippetTimestamp": 0,
+    "SnippetDuration": 0
+  },
+  {
+    "FileName": "cut_Male3-Tourism.wav",
+    "FileLocation": "C:\\Users\\loure\\OneDrive\\Documentos\\Uni docs\\2025_F\\COGS 444\\LangBiasTester\\config\\audio\\CN\\Male\\cut_Male3-Tourism.wav",
+    "Duration": "00:01:00",
+    "Lang": "CN",
+    "MixLangs": null,
+    "VoiceGender": "Male",
+    "SnippetTimestamp": 0,
+    "SnippetDuration": 0
+  },
+  {
+    "FileName": "cut_Male4-Potala Palace exhibition.wav",
+    "FileLocation": "C:\\Users\\loure\\OneDrive\\Documentos\\Uni docs\\2025_F\\COGS 444\\LangBiasTester\\config\\audio\\CN\\Male\\cut_Male4-Potala Palace exhibition.wav",
+    "Duration": "00:01:00",
+    "Lang": "CN",
+    "MixLangs": null,
+    "VoiceGender": "Male",
+    "SnippetTimestamp": 0,
+    "SnippetDuration": 0
+  },
+  {
+    "FileName": "cut_Male5-Chen brothers art.wav",
+    "FileLocation": "C:\\Users\\loure\\OneDrive\\Documentos\\Uni docs\\2025_F\\COGS 444\\LangBiasTester\\config\\audio\\CN\\Male\\cut_Male5-Chen brothers art.wav",
+    "Duration": "00:01:00",
+    "Lang": "CN",
+    "MixLangs": null,
+    "VoiceGender": "Male",
+    "SnippetTimestamp": 0,
+    "SnippetDuration": 0
+  },
+  {
+    "FileName": "EFO1 (contatenated).wav",
+    "FileLocation": "C:\\Users\\loure\\OneDrive\\Documentos\\Uni docs\\2025_F\\COGS 444\\LangBiasTester\\config\\audio\\EN\\Female\\EFO1 (contatenated).wav",
+    "Duration": "00:01:00",
+    "Lang": "EN",
+    "MixLangs": null,
+    "VoiceGender": "Female",
+    "SnippetTimestamp": 0,
+    "SnippetDuration": 0
+  },
+  {
+    "FileName": "EFO2 (contatenated).wav",
+    "FileLocation": "C:\\Users\\loure\\OneDrive\\Documentos\\Uni docs\\2025_F\\COGS 444\\LangBiasTester\\config\\audio\\EN\\Female\\EFO2 (contatenated).wav",
+    "Duration": "00:01:00",
+    "Lang": "EN",
+    "MixLangs": null,
+    "VoiceGender": "Female",
+    "SnippetTimestamp": 0,
+    "SnippetDuration": 0
+  },
+  {
+    "FileName": "EFO3 (contatenated).wav",
+    "FileLocation": "C:\\Users\\loure\\OneDrive\\Documentos\\Uni docs\\2025_F\\COGS 444\\LangBiasTester\\config\\audio\\EN\\Female\\EFO3 (contatenated).wav",
+    "Duration": "00:01:00",
+    "Lang": "EN",
+    "MixLangs": null,
+    "VoiceGender": "Female",
+    "SnippetTimestamp": 0,
+    "SnippetDuration": 0
+  },
+  {
+    "FileName": "EFO4 (contatenated).wav",
+    "FileLocation": "C:\\Users\\loure\\OneDrive\\Documentos\\Uni docs\\2025_F\\COGS 444\\LangBiasTester\\config\\audio\\EN\\Female\\EFO4 (contatenated).wav",
+    "Duration": "00:01:00",
+    "Lang": "EN",
+    "MixLangs": null,
+    "VoiceGender": "Female",
+    "SnippetTimestamp": 0,
+    "SnippetDuration": 0
+  },
+  {
+    "FileName": "EFO5 (contatenated).wav",
+    "FileLocation": "C:\\Users\\loure\\OneDrive\\Documentos\\Uni docs\\2025_F\\COGS 444\\LangBiasTester\\config\\audio\\EN\\Female\\EFO5 (contatenated).wav",
+    "Duration": "00:01:00",
+    "Lang": "EN",
+    "MixLangs": null,
+    "VoiceGender": "Female",
+    "SnippetTimestamp": 0,
+    "SnippetDuration": 0
+  },
+  {
+    "FileName": "EMO1 (contatenated).wav",
+    "FileLocation": "C:\\Users\\loure\\OneDrive\\Documentos\\Uni docs\\2025_F\\COGS 444\\LangBiasTester\\config\\audio\\EN\\Male\\EMO1 (contatenated).wav",
+    "Duration": "00:01:00",
+    "Lang": "EN",
+    "MixLangs": null,
+    "VoiceGender": "Male",
+    "SnippetTimestamp": 0,
+    "SnippetDuration": 0
+  },
+  {
+    "FileName": "EMO2 (contatenated).wav",
+    "FileLocation": "C:\\Users\\loure\\OneDrive\\Documentos\\Uni docs\\2025_F\\COGS 444\\LangBiasTester\\config\\audio\\EN\\Male\\EMO2 (contatenated).wav",
+    "Duration": "00:01:00",
+    "Lang": "EN",
+    "MixLangs": null,
+    "VoiceGender": "Male",
+    "SnippetTimestamp": 0,
+    "SnippetDuration": 0
+  },
+  {
+    "FileName": "EMO3 (contatenated).wav",
+    "FileLocation": "C:\\Users\\loure\\OneDrive\\Documentos\\Uni docs\\2025_F\\COGS 444\\LangBiasTester\\config\\audio\\EN\\Male\\EMO3 (contatenated).wav",
+    "Duration": "00:01:00",
+    "Lang": "EN",
+    "MixLangs": null,
+    "VoiceGender": "Male",
+    "SnippetTimestamp": 0,
+    "SnippetDuration": 0
+  },
+  {
+    "FileName": "EMO4 (contatenated).wav",
+    "FileLocation": "C:\\Users\\loure\\OneDrive\\Documentos\\Uni docs\\2025_F\\COGS 444\\LangBiasTester\\config\\audio\\EN\\Male\\EMO4 (contatenated).wav",
+    "Duration": "00:01:00",
+    "Lang": "EN",
+    "MixLangs": null,
+    "VoiceGender": "Male",
+    "SnippetTimestamp": 0,
+    "SnippetDuration": 0
+  },
+  {
+    "FileName": "EMO5 (contatenated).wav",
+    "FileLocation": "C:\\Users\\loure\\OneDrive\\Documentos\\Uni docs\\2025_F\\COGS 444\\LangBiasTester\\config\\audio\\EN\\Male\\EMO5 (contatenated).wav",
+    "Duration": "00:01:00",
+    "Lang": "EN",
+    "MixLangs": null,
+    "VoiceGender": "Male",
+    "SnippetTimestamp": 0,
+    "SnippetDuration": 0
+  },
+  {
+    "FileName": "FFQ1 (contatenated).wav",
+    "FileLocation": "C:\\Users\\loure\\OneDrive\\Documentos\\Uni docs\\2025_F\\COGS 444\\LangBiasTester\\config\\audio\\FR\\Female\\FFQ1 (contatenated).wav",
+    "Duration": "00:01:00",
+    "Lang": "FR",
+    "MixLangs": null,
+    "VoiceGender": "Female",
+    "SnippetTimestamp": 0,
+    "SnippetDuration": 0
+  },
+  {
+    "FileName": "FFQ2 (contatenated).wav",
+    "FileLocation": "C:\\Users\\loure\\OneDrive\\Documentos\\Uni docs\\2025_F\\COGS 444\\LangBiasTester\\config\\audio\\FR\\Female\\FFQ2 (contatenated).wav",
+    "Duration": "00:01:00",
+    "Lang": "FR",
+    "MixLangs": null,
+    "VoiceGender": "Female",
+    "SnippetTimestamp": 0,
+    "SnippetDuration": 0
+  },
+  {
+    "FileName": "FFQ3 (contatenated).wav",
+    "FileLocation": "C:\\Users\\loure\\OneDrive\\Documentos\\Uni docs\\2025_F\\COGS 444\\LangBiasTester\\config\\audio\\FR\\Female\\FFQ3 (contatenated).wav",
+    "Duration": "00:01:00",
+    "Lang": "FR",
+    "MixLangs": null,
+    "VoiceGender": "Female",
+    "SnippetTimestamp": 0,
+    "SnippetDuration": 0
+  },
+  {
+    "FileName": "FFQ4 (contatenated).wav",
+    "FileLocation": "C:\\Users\\loure\\OneDrive\\Documentos\\Uni docs\\2025_F\\COGS 444\\LangBiasTester\\config\\audio\\FR\\Female\\FFQ4 (contatenated).wav",
+    "Duration": "00:01:00",
+    "Lang": "FR",
+    "MixLangs": null,
+    "VoiceGender": "Female",
+    "SnippetTimestamp": 0,
+    "SnippetDuration": 0
+  },
+  {
+    "FileName": "FFQ5 (contatenated).wav",
+    "FileLocation": "C:\\Users\\loure\\OneDrive\\Documentos\\Uni docs\\2025_F\\COGS 444\\LangBiasTester\\config\\audio\\FR\\Female\\FFQ5 (contatenated).wav",
+    "Duration": "00:01:00",
+    "Lang": "FR",
+    "MixLangs": null,
+    "VoiceGender": "Female",
+    "SnippetTimestamp": 0,
+    "SnippetDuration": 0
+  },
+  {
+    "FileName": "FMQ1 (contatenated).wav",
+    "FileLocation": "C:\\Users\\loure\\OneDrive\\Documentos\\Uni docs\\2025_F\\COGS 444\\LangBiasTester\\config\\audio\\FR\\Male\\FMQ1 (contatenated).wav",
+    "Duration": "00:01:00",
+    "Lang": "FR",
+    "MixLangs": null,
+    "VoiceGender": "Male",
+    "SnippetTimestamp": 0,
+    "SnippetDuration": 0
+  },
+  {
+    "FileName": "FMQ2 (contatenated).wav",
+    "FileLocation": "C:\\Users\\loure\\OneDrive\\Documentos\\Uni docs\\2025_F\\COGS 444\\LangBiasTester\\config\\audio\\FR\\Male\\FMQ2 (contatenated).wav",
+    "Duration": "00:01:00",
+    "Lang": "FR",
+    "MixLangs": null,
+    "VoiceGender": "Male",
+    "SnippetTimestamp": 0,
+    "SnippetDuration": 0
+  },
+  {
+    "FileName": "FMQ3 (contatenated).wav",
+    "FileLocation": "C:\\Users\\loure\\OneDrive\\Documentos\\Uni docs\\2025_F\\COGS 444\\LangBiasTester\\config\\audio\\FR\\Male\\FMQ3 (contatenated).wav",
+    "Duration": "00:01:00",
+    "Lang": "FR",
+    "MixLangs": null,
+    "VoiceGender": "Male",
+    "SnippetTimestamp": 0,
+    "SnippetDuration": 0
+  },
+  {
+    "FileName": "FMQ4 (contatenated).wav",
+    "FileLocation": "C:\\Users\\loure\\OneDrive\\Documentos\\Uni docs\\2025_F\\COGS 444\\LangBiasTester\\config\\audio\\FR\\Male\\FMQ4 (contatenated).wav",
+    "Duration": "00:01:00",
+    "Lang": "FR",
+    "MixLangs": null,
+    "VoiceGender": "Male",
+    "SnippetTimestamp": 0,
+    "SnippetDuration": 0
+  },
+  {
+    "FileName": "FMQ5 (contatenated).wav",
+    "FileLocation": "C:\\Users\\loure\\OneDrive\\Documentos\\Uni docs\\2025_F\\COGS 444\\LangBiasTester\\config\\audio\\FR\\Male\\FMQ5 (contatenated).wav",
+    "Duration": "00:01:00",
+    "Lang": "FR",
+    "MixLangs": null,
+    "VoiceGender": "Male",
+    "SnippetTimestamp": 0,
+    "SnippetDuration": 0
+  }
+]

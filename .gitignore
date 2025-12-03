@@ -362,3 +362,62 @@ MigrationBackup/
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
 /discardedMethods.txt
+/designseqlist.pdf
+/design_sequences.txt
+/extractseqs.py
+/settings.json
+/Properties/launchSettings.json
+/config/audio/CN/Female/cut_Fem1-japan politics.wav
+/config/audio/CN/Female/cut_Fem2-Hainan.wav
+/config/audio/CN/Female/cut_Fem3-Art gallery.wav
+/config/audio/CN/Female/cut_Fem4-Shanghai meeting.wav
+/config/audio/CN/Female/cut_Fem5-Patrimoine West Xia graves.wav
+/config/audio/CN/Male
+/config/audio/CN/Male/cut_Male1-USA politics.wav
+/config/audio/CN/Male/cut_Male2-Shanghai land sale.wav
+/config/audio/CN/Male/cut_Male3-Tourism.wav
+/config/audio/CN/Male/cut_Male4-Potala Palace exhibition.wav
+/config/audio/CN/Male/cut_Male5-Chen brothers art.wav
+/config/audio/EN
+/config/audio/EN/Female
+/config/audio/EN/Female/EFO1 (contatenated).wav
+/config/audio/EN/Female/EFO2 (contatenated).wav
+/config/audio/EN/Female/EFO3 (contatenated).wav
+/config/audio/EN/Female/EFO4 (contatenated).wav
+/config/audio/EN/Female/EFO5 (contatenated).wav
+/config/audio/EN/Male
+/config/audio/EN/Male/EMO1 (contatenated).wav
+/config/audio/EN/Male/EMO2 (contatenated).wav
+/config/audio/EN/Male/EMO3 (contatenated).wav
+/config/audio/EN/Male/EMO4 (contatenated).wav
+/config/audio/EN/Male/EMO5 (contatenated).wav
+/config/audio/FR
+/config/audio/FR/Female
+/config/audio/FR/Female/FFQ1 (contatenated).wav
+/config/audio/FR/Female/FFQ2 (contatenated).wav
+/config/audio/FR/Female/FFQ3 (contatenated).wav
+/config/audio/FR/Female/FFQ4 (contatenated).wav
+/config/audio/FR/Female/FFQ5 (contatenated).wav
+/config/audio/FR/Male
+/config/audio/FR/Male/FMQ1 (contatenated).wav
+/config/audio/FR/Male/FMQ2 (contatenated).wav
+/config/audio/FR/Male/FMQ3 (contatenated).wav
+/config/audio/FR/Male/FMQ4 (contatenated).wav
+/config/audio/FR/Male/FMQ5 (contatenated).wav
+/config/audio/Mixed
+/config/audio/Mixed/EN10.wav
+/config/audio/Mixed/EN1FR9.wav
+/config/audio/Mixed/EN2FR8.wav
+/config/audio/Mixed/EN3FR7.wav
+/config/audio/Mixed/EN4FR6.wav
+/config/audio/Mixed/EN5FR5.wav
+/config/audio/Mixed/EN6FR4.wav
+/config/audio/Mixed/EN7FR3.wav
+/config/audio/Mixed/EN8FR2.wav
+/config/audio/Mixed/EN9FR1.wav
+/config/audio/Mixed/FR10.wav
+/config/audio/unifyfolders.sh
+/.docs/extractseqs.py
+/.docs/discardedMethods.txt
+/.docs/designseqlist.pdf
+/.docs/design_sequences.txt

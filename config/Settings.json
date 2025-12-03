@@ -1,0 +1,38 @@
+{
+  "AdminID": 42,
+  "RunDemo": false,
+
+  "RunTraining": false,
+  "TrainingTrials": 2,
+  "TestReactionTime": false,
+
+  "TimeBetweenTrials": 1,
+  "ResponseWindow": 2,
+  "UseT1I1Shuffling": true,
+  "Rounds": 0,
+  "TrialsPerCondition": 0,
+
+  "TestLang1": "EN",
+  "TestLang2": "FR",
+  "IncludeControl": false,
+  "ControlLang": "CN",
+
+  "Lang1Direction": "Left",
+  "Lang2Direction": "Right",
+
+  "ShuffleTextLang": true,
+  "ShuffleLangDirection": true,
+
+  "Conditions": {
+    "100": 0,
+    "80": 20,
+    "60": 40,
+    "40": 60,
+    "20": 80,
+    "0": 100
+  },
+
+  "RawAudioFilePath": "config/audio/RawAudioMetadata.json",
+  "UseStaticMixes": true,
+  "MixedAudioFilePath": "config/audio/MixedAudioMetadata.json"
+}

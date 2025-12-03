@@ -133,7 +133,7 @@ namespace LangBiasTester.Infrastructure.Managers
 
             var jsonString = JsonSerializer.Serialize(this, _jsonSerializerOptions);
 
-            File.WriteAllText($"Outputs/{ParticipantInfo.ID}.json", jsonString);
+            File.WriteAllText($"outputs/{ParticipantInfo.ID}.json", jsonString);
         }
     }
 }

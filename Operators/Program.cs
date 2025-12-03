@@ -1,7 +1,6 @@
 using LangBiasTester.Infrastructure.Managers;
 using LangBiasTester.Infrastructure.Models;
 using LangBiasTester.Operators.DataHandlers;
-using System.Text.Json;
 
 namespace LangBiasTester.Operators
 {

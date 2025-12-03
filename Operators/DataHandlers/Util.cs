@@ -26,10 +26,11 @@ namespace LangBiasTester.Operators.DataHandlers
         /// <exception cref="Exception">Thrown if the deserialization process results in a null <see cref="Settings"/> object.</exception>
         internal Settings ExtractSettings()
         {
-            var jsonString = File.ReadAllText("Settings.json"); //rewrite so it finds file instead of relying on specific path
+            var jsonString = File.ReadAllText("config/Settings.json"); //rewrite so it finds file instead of relying on specific path
 
-            Settings settings = JsonSerializer.Deserialize<Settings>(jsonString, _options)
-                ?? throw new Exception("Could not configure experiment. Check that settings.json exists.");
+            var settings = JsonSerializer.Deserialize<Settings>(jsonString, _options);
+
+            if (settings == null) ErrorManager.ThrowError("Could not configure experiment. Check that settings.json exists.");
 
             return settings;
         }
@@ -55,18 +56,19 @@ namespace LangBiasTester.Operators.DataHandlers
 
             if (File.Exists(settings.RawAudioFilePath) && !overrideExisting) return;
 
-            if (audioDirectory.GetDirectories().Length == 0) throw new Exception("Audio directories not found.");
+            if (audioDirectory.GetDirectories().Length == 0) ErrorManager.ShowError("Audio directories not found.");
 
             List<Audio> audios = [];
 
             foreach (DirectoryInfo language in audioDirectory.GetDirectories())
             {
-                if (!Enum.TryParse(language.Name, out Lang lang)) throw new Exception($"Incorrect naming format: {language.Name}.");
-                if (language.GetDirectories().Length == 0) throw new Exception("Voice gender directories not found.");
+                if (language.Name == "Mixed") continue;
+                if (!Enum.TryParse(language.Name, out Lang lang)) ErrorManager.ShowError($"Incorrect naming format: {language.Name}.");
+                if (language.GetDirectories().Length == 0) ErrorManager.ShowError("Voice gender directories not found.");
 
                 foreach (DirectoryInfo voiceGender in language.GetDirectories())
                 {
-                    if (!Enum.TryParse(voiceGender.Name, out VoiceGender gender)) throw new Exception($"Incorrect naming format: {voiceGender.Name}.");
+                    if (!Enum.TryParse(voiceGender.Name, out VoiceGender gender)) ErrorManager.ShowError($"Incorrect naming format: {voiceGender.Name}.");
 
                     foreach (FileInfo audioFile in voiceGender.GetFiles())
                     {
@@ -109,8 +111,8 @@ namespace LangBiasTester.Operators.DataHandlers
 
             var audioJsonString = File.ReadAllText(settings.RawAudioFilePath);
 
-            List<Audio> audioJson = JsonSerializer.Deserialize<IEnumerable<Audio>>(audioJsonString, _options).ToList()
-                ?? throw new Exception("Could not configure experiment. Check that AudioMetadata.json exists.");
+            var audioJson = JsonSerializer.Deserialize<IEnumerable<Audio>>(audioJsonString, _options).ToList();
+            if (audioJson == null) ErrorManager.ThrowError("Could not configure experiment. Check that AudioMetadata.json exists.");
 
             List<Audio> femaleAudios = [..audioJson.Where(audio =>
                 audio.VoiceGender == VoiceGender.Female
@@ -122,7 +124,7 @@ namespace LangBiasTester.Operators.DataHandlers
                 && (audio.Lang == settings.TestLang1 || audio.Lang == settings.TestLang2)
                 )];
 
-            if (femaleAudios.Count != maleAudios.Count) throw new Exception($"Voice gender distribution is not equal ({femaleAudios.Count} female audios and {maleAudios.Count} male audios).");
+            if (femaleAudios.Count != maleAudios.Count) ErrorManager.ThrowError($"Voice gender distribution is not equal ({femaleAudios.Count} female audios and {maleAudios.Count} male audios).");
 
             var totalAudios = femaleAudios.Count + maleAudios.Count;
 
