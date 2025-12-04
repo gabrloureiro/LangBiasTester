@@ -367,6 +367,8 @@ FodyWeavers.xsd
 /extractseqs.py
 /settings.json
 /Properties/launchSettings.json
+/config/audio/CN
+/config/audio/CN/Female
 /config/audio/CN/Female/cut_Fem1-japan politics.wav
 /config/audio/CN/Female/cut_Fem2-Hainan.wav
 /config/audio/CN/Female/cut_Fem3-Art gallery.wav
@@ -421,3 +423,4 @@ FodyWeavers.xsd
 /.docs/discardedMethods.txt
 /.docs/designseqlist.pdf
 /.docs/design_sequences.txt
+/outputs

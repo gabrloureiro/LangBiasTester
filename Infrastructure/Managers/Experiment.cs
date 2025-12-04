@@ -7,7 +7,7 @@ namespace LangBiasTester.Infrastructure.Managers
 {
     internal class Experiment
     {
-        // Settings properties
+        // Experiment properties to be exported
         internal struct MiniSettings
         {
             public Lang Lang1 { get; set; }
@@ -15,7 +15,7 @@ namespace LangBiasTester.Infrastructure.Managers
             public bool ControlIncluded { get; set; }
             public Keys Lang1Direction { get; set; }
             public Keys Lang2Direction { get; set; }
-            public List<int> ConditionSequence { get; set; }
+            public int[] StimulusSequence { get; set; }
         }
 
         internal Settings Settings;
@@ -30,7 +30,7 @@ namespace LangBiasTester.Infrastructure.Managers
         // Lists
         [JsonInclude]
         internal LinkedList<Trial> Trials { get; private set; }
-        private readonly List<Condition> Conditions;
+        private readonly List<Stimulus> Stimuli;
         private readonly List<Audio> Audios;
 
         private JsonSerializerOptions _jsonSerializerOptions;
@@ -40,7 +40,7 @@ namespace LangBiasTester.Infrastructure.Managers
         {
             Settings = settings;
 
-            Conditions = [];
+            Stimuli = [];
             Trials = [];
             Audios = [];
             ParticipantInfo = participantInfo;
@@ -63,28 +63,18 @@ namespace LangBiasTester.Infrastructure.Managers
             Audios.AddRange(JsonSerializer.Deserialize<List<Audio>>(File.ReadAllText(audioFilePath),_jsonSerializerOptions));
 
             // If using static mixes, all information is already contained in the audio objects.
-            // Otherwise, generate conditions one by one using information in settings.
+            // Otherwise, generate stimuli one by one using information in settings.
             if (Settings.UseStaticMixes)
             {
-                ConditionManager.Init(Conditions, Audios);
+                StimulusManager.Init(Stimuli, Audios);
             }
             else
             {
-                ConditionManager.Init(Conditions, Audios, Settings.TestLang1, Settings.TestLang2, Settings.Conditions);
+                StimulusManager.Init(Stimuli, Audios, Settings.TestLang1, Settings.TestLang2, Settings.Stimuli);
             }
 
-            // If using T1I1, provide only trials list, conditions list, audios list, response window, and the randomizer seed.
-            // Otherwise, provide information about specific number of trials and rounds as well.
-            if (Settings.UseT1I1Shuffling)
-            {
-                TrialManager.Init(Trials, Conditions, Audios, randomizerSeed, Settings.ResponseWindow);
-            }
-            else
-            {
-                TrialManager.Init(Trials, Conditions, Audios, randomizerSeed, Settings.ResponseWindow, Settings.TrialsPerCondition, Settings.Rounds);
-            }
-
-            //set ConditionSequence for export based on what TrialManager.Init generates
+            // Initialize trials
+            TrialManager.Init(Trials, Stimuli, Audios, Settings.ResponseWindow, Settings.TrialBlocks, Settings.SequencesPerTrialBlock, randomizerSeed, Settings.UseT1I1Shuffling);
         }
         private void ShuffleLangs()
         {
@@ -128,7 +118,8 @@ namespace LangBiasTester.Infrastructure.Managers
                 Lang2 = Settings.TestLang2,
                 ControlIncluded = Settings.IncludeControl,
                 Lang1Direction = Settings.Lang1Direction,
-                Lang2Direction = Settings.Lang2Direction
+                Lang2Direction = Settings.Lang2Direction,
+                StimulusSequence = [.. Trials.Select(trial => trial.StimulusNumber)]
             };
 
             var jsonString = JsonSerializer.Serialize(this, _jsonSerializerOptions);

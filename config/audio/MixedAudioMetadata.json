@@ -9,124 +9,8 @@
     },
     "VoiceGender": null,
     "SnippetTimestamp": 0,
-    "SnippetDuration": 0
-  },
-  {
-    "FileName": "EN9FR1",
-    "FileLocation": "C:\\Users\\loure\\OneDrive\\Documentos\\Uni docs\\2025_F\\COGS 444\\LangBiasTester\\config\\audio\\Mixed\\EN9FR1.wav",
-    "Duration": "00:01:00",
-    "Lang": null,
-    "MixLangs": {
-      "EN": 9,
-      "FR": 1
-    },
-    "VoiceGender": null,
-    "SnippetTimestamp": 0,
-    "SnippetDuration": 0
-  },
-  {
-    "FileName": "EN8FR2",
-    "FileLocation": "C:\\Users\\loure\\OneDrive\\Documentos\\Uni docs\\2025_F\\COGS 444\\LangBiasTester\\config\\audio\\Mixed\\EN8FR2.wav",
-    "Duration": "00:01:00",
-    "Lang": null,
-    "MixLangs": {
-      "EN": 8,
-      "FR": 2
-    },
-    "VoiceGender": null,
-    "SnippetTimestamp": 0,
-    "SnippetDuration": 0
-  },
-  {
-    "FileName": "EN7FR3",
-    "FileLocation": "C:\\Users\\loure\\OneDrive\\Documentos\\Uni docs\\2025_F\\COGS 444\\LangBiasTester\\config\\audio\\Mixed\\EN7FR3.wav",
-    "Duration": "00:01:00",
-    "Lang": null,
-    "MixLangs": {
-      "EN": 7,
-      "FR": 3
-    },
-    "VoiceGender": null,
-    "SnippetTimestamp": 0,
-    "SnippetDuration": 0
-  },
-  {
-    "FileName": "EN6FR4",
-    "FileLocation": "C:\\Users\\loure\\OneDrive\\Documentos\\Uni docs\\2025_F\\COGS 444\\LangBiasTester\\config\\audio\\Mixed\\EN6FR4.wav",
-    "Duration": "00:01:00",
-    "Lang": null,
-    "MixLangs": {
-      "EN": 6,
-      "FR": 4
-    },
-    "VoiceGender": null,
-    "SnippetTimestamp": 0,
-    "SnippetDuration": 0
-  },
-  {
-    "FileName": "EN5FR5",
-    "FileLocation": "C:\\Users\\loure\\OneDrive\\Documentos\\Uni docs\\2025_F\\COGS 444\\LangBiasTester\\config\\audio\\Mixed\\EN5FR5.wav",
-    "Duration": "00:01:00",
-    "Lang": null,
-    "MixLangs": {
-      "EN": 5,
-      "FR": 5
-    },
-    "VoiceGender": null,
-    "SnippetTimestamp": 0,
-    "SnippetDuration": 0
-  },
-  {
-    "FileName": "EN4FR6",
-    "FileLocation": "C:\\Users\\loure\\OneDrive\\Documentos\\Uni docs\\2025_F\\COGS 444\\LangBiasTester\\config\\audio\\Mixed\\EN4FR6.wav",
-    "Duration": "00:01:00",
-    "Lang": null,
-    "MixLangs": {
-      "EN": 4,
-      "FR": 6
-    },
-    "VoiceGender": null,
-    "SnippetTimestamp": 0,
-    "SnippetDuration": 0
-  },
-  {
-    "FileName": "EN3FR7",
-    "FileLocation": "C:\\Users\\loure\\OneDrive\\Documentos\\Uni docs\\2025_F\\COGS 444\\LangBiasTester\\config\\audio\\Mixed\\EN3FR7.wav",
-    "Duration": "00:01:00",
-    "Lang": null,
-    "MixLangs": {
-      "EN": 3,
-      "FR": 7
-    },
-    "VoiceGender": null,
-    "SnippetTimestamp": 0,
-    "SnippetDuration": 0
-  },
-  {
-    "FileName": "EN2FR8",
-    "FileLocation": "C:\\Users\\loure\\OneDrive\\Documentos\\Uni docs\\2025_F\\COGS 444\\LangBiasTester\\config\\audio\\Mixed\\EN2FR8.wav",
-    "Duration": "00:01:00",
-    "Lang": null,
-    "MixLangs": {
-      "EN": 2,
-      "FR": 8
-    },
-    "VoiceGender": null,
-    "SnippetTimestamp": 0,
-    "SnippetDuration": 0
-  },
-  {
-    "FileName": "EN1FR9",
-    "FileLocation": "C:\\Users\\loure\\OneDrive\\Documentos\\Uni docs\\2025_F\\COGS 444\\LangBiasTester\\config\\audio\\Mixed\\EN1FR9.wav",
-    "Duration": "00:01:00",
-    "Lang": null,
-    "MixLangs": {
-      "EN": 1,
-      "FR": 9
-    },
-    "VoiceGender": null,
-    "SnippetTimestamp": 0,
-    "SnippetDuration": 0
+    "SnippetDuration": 0,
+    "SampleRate": 0
   },
   {
     "FileName": "FR10",
@@ -138,6 +22,7 @@
     },
     "VoiceGender": null,
     "SnippetTimestamp": 0,
-    "SnippetDuration": 0
+    "SnippetDuration": 0,
+    "SampleRate": 0
   }
 ]

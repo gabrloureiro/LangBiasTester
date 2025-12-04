@@ -18,8 +18,8 @@ namespace LangBiasTester.Operators
         public int ResponseWindow { get; set; }
 
         public bool UseT1I1Shuffling { get; set; }
-        public int Rounds { get; set; }
-        public int TrialsPerCondition { get; set; }
+        public int TrialBlocks { get; set; }
+        public int SequencesPerTrialBlock { get; set; }
 
 
         public Lang TestLang1 { get; set; }
@@ -34,7 +34,7 @@ namespace LangBiasTester.Operators
         public bool ShuffleTextLang { get; set; }
         public bool ShuffleLangDirection { get; set; }
 
-        public Dictionary<int, int>? Conditions { get; set; }
+        public Dictionary<int, int>? Stimuli { get; set; }
         public string? RawAudioFilePath { get; set; }
         public bool UseStaticMixes { get; set; }
         public string? MixedAudioFilePath { get; set; }

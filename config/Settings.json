@@ -9,8 +9,8 @@
   "TimeBetweenTrials": 1,
   "ResponseWindow": 2,
   "UseT1I1Shuffling": true,
-  "Rounds": 0,
-  "TrialsPerCondition": 0,
+  "TrialBlocks": 1,
+  "SequencesPerTrialBlock": 3,
 
   "TestLang1": "EN",
   "TestLang2": "FR",
@@ -23,7 +23,7 @@
   "ShuffleTextLang": true,
   "ShuffleLangDirection": true,
 
-  "Conditions": {
+  "Stimuli": {
     "100": 0,
     "80": 20,
     "60": 40,

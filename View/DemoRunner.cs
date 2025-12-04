@@ -94,15 +94,15 @@
         }
         private void InstructionsTutorial()
         {
-            var conditions = _form._experiment.Settings.Conditions;
-            string conditionsString = "";
+            var stimuli = _form._experiment.Settings.Stimuli;
+            string stimuliString = "";
 
-            foreach (KeyValuePair<int, int> condition in conditions)
+            foreach (KeyValuePair<int, int> stimulus in stimuli)
             {
-                conditionsString += $"{condition.Key}/{condition.Value}, ";
+                stimuliString += $"{stimulus.Key}/{stimulus.Value}, ";
             }
 
-            conditionsString = conditionsString.TrimEnd(',', ' ');
+            stimuliString = stimuliString.TrimEnd(',', ' ');
 
             FormManager.GenericLabel
                 (
@@ -112,7 +112,7 @@
                 All of these settings are also configurable within Settings.json, and they are recorded and exported along with the information and responses from the participant.
                 
                 At this point in the program, the trials have all been initialized with the following settings:
-                Conditions: {conditionsString}
+                Stimuli: {stimuliString}
                 Time between trials: {_form._experiment.Settings.TimeBetweenTrials} seconds
                 Response window: {_form._experiment.Settings.ResponseWindow} seconds
                                 

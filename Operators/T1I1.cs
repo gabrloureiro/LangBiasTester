@@ -4,26 +4,26 @@ namespace LangBiasTester.Operators
 {
     internal class T1I1
     {
-        private int ConditionCount { get; set; }
+        private int StimulusCount { get; set; }
         private List<int> Sequence { get; }
         private readonly Random Rnd;
-        private readonly List<int> Conditions;
+        private readonly List<int> Stimuli;
         private readonly string JsonPath;
         private readonly Dictionary<int, List<int>> RawSequences;
 
-        public T1I1(int seed, int conditionCount)
+        public T1I1(int seed, int stimulusCount)
         {
             JsonPath = "config/RawT1I1Sequences.json";
             Rnd = new(seed);
-            ConditionCount = conditionCount;
+            StimulusCount = stimulusCount;
 
             RawSequences = LoadSequences();
 
-            var randomizedConditions = Enumerable.Range(1, conditionCount).ToArray();
-            Rnd.Shuffle(randomizedConditions);
-            Conditions = [.. randomizedConditions];
+            var randomizedStimuluss = Enumerable.Range(1, stimulusCount).ToArray();
+            Rnd.Shuffle(randomizedStimuluss);
+            Stimuli = [.. randomizedStimuluss];
 
-            Sequence = GetRawSequence(ConditionCount);
+            Sequence = GetRawSequence(StimulusCount);
         }
 
         private Dictionary<int, List<int>> LoadSequences()
@@ -40,7 +40,7 @@ namespace LangBiasTester.Operators
             if (RawSequences.TryGetValue(listLength, out List<int>? sequence)) return sequence;
             else
             {
-                ErrorManager.ThrowError("No type-1 index-1 sequences are available for the number of conditions specified.",
+                ErrorManager.ThrowError("No type-1 index-1 sequences are available for the number of stimuli specified.",
                     "Type-1 Index-1 Sequence Not Available");
 
                 return null;
@@ -50,7 +50,9 @@ namespace LangBiasTester.Operators
         public List<int> GenerateSequence()
         {
             RemapSequence();
-            MessageBox.Show(ToString());
+            
+            //TODO: add logic to further shuffle the sequence
+
             if (ValidateSequence(Sequence)) return Sequence;
             else
             {
@@ -65,9 +67,9 @@ namespace LangBiasTester.Operators
 
             Dictionary<int, int> mappings = [];
 
-            for (int i = 0; i < ConditionCount; i++)
+            for (int i = 0; i < StimulusCount; i++)
             {
-                mappings[i + 1] = Conditions[i];
+                mappings[i + 1] = Stimuli[i];
             }
 
             foreach (var element in elementPositions)
@@ -81,7 +83,7 @@ namespace LangBiasTester.Operators
 
         private bool ValidateSequence(List<int> tentativeSequence)
         {
-            int n = ConditionCount;
+            int n = StimulusCount;
 
             // check sequence is of the right length (O(1))
             if (tentativeSequence.Count != n * n) return false;
@@ -162,10 +164,10 @@ namespace LangBiasTester.Operators
         {
             var sequenceString = "";
 
-            for (int i = 0; i < Sequence.Count / ConditionCount; i++)
+            for (int i = 0; i < Sequence.Count / StimulusCount; i++)
             {
-                // take conditionCount elements for each round
-                var roundElements = Sequence.GetRange(i * ConditionCount, ConditionCount);
+                // take stimulusCount elements for each round
+                var roundElements = Sequence.GetRange(i * StimulusCount, StimulusCount);
                 sequenceString += string.Join(", ", roundElements) + "\n";
             }
 

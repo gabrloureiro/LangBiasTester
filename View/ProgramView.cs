@@ -25,7 +25,7 @@ namespace LangBiasTester
         private readonly Dictionary<Keys, string> _frenchKeysDict;
 
         private LinkedListNode<Trial>? _currentTrial;
-        private int _currentRound;
+        private int _currentTrialBlock;
         private Dictionary<OffsetSampleProvider, WaveOut>? _waveStreams;
 
         private int _programStage;
@@ -34,7 +34,7 @@ namespace LangBiasTester
         /// <summary>
         /// Initializes a new instance of the ProgramView class with the specified experiment and utility objects.
         /// </summary>
-        /// <param name="experiment">The Experiment instance that contains all information about trials, conditions, and settings. Cannot be null.</param>
+        /// <param name="experiment">The Experiment instance that contains all information about trials, stimuli, and settings. Cannot be null.</param>
         /// <param name="util">The Util instance that supplies utility functions or services required by the view. Cannot be null.</param>
         internal ProgramView(Experiment experiment, Util util)
         {
@@ -42,7 +42,6 @@ namespace LangBiasTester
 
             _experiment = experiment;
             _util = util;
-            ActiveControl = null;
             _programStage = 0;
 
             _participantIDBox = new();
@@ -60,6 +59,7 @@ namespace LangBiasTester
         }
         private void Form1_Load(object sender, EventArgs e)
         {
+            ActiveControl = null;
             KeyPreview = true;
             ProgramControl();
         }
@@ -131,6 +131,7 @@ namespace LangBiasTester
 
             _participantIDBox.KeyDown += RegisterIDBoxInput;
         }
+
         /// <summary>
         /// Presents the participants with instructions. Order and direction of languages are randomized.
         /// </summary>
@@ -142,11 +143,11 @@ namespace LangBiasTester
             Dictionary<Lang, string> instructions = new()
             {
                 { 
-                    EN, $"You will be presented with a series of sounds. Your task is to indicate whether what you hear is English (by pressing the" +
+                    EN, $"You will be presented with a series of sounds. Your task is to indicate whether what you hear is English (by pressing the " +
                     $"{_experiment.Settings.LangKeyDictionary[EN].ToString().ToLower()} arrow key) or French (by pressing the {_experiment.Settings.LangKeyDictionary[FR].ToString().ToLower()} arrow key)."
                 },
                 {
-                    FR, $"Vous serez presenté.e avec des différents sons. Votre rôle est d'indiquer si ce que vous entendiez est Français (en appuyant la flèche" +
+                    FR, $"Vous serez presenté.e avec des différents sons. Votre rôle est d'indiquer si ce que vous entendiez est Français (en appuyant la flèche " +
                     $"{_frenchKeysDict[_experiment.Settings.LangKeyDictionary[FR]].ToLower()}) ou Anglais (en appuyant la flèche {_frenchKeysDict[_experiment.Settings.LangKeyDictionary[EN]].ToLower()})."
 
                 }
@@ -167,6 +168,7 @@ namespace LangBiasTester
 
             KeyDown += DismissInstructions;
         }
+
         /// <summary>
         /// Initializes and starts the experiment by setting up the initial display and running the first trial.
         /// </summary>
@@ -189,7 +191,7 @@ namespace LangBiasTester
                 );
 
             _currentTrial = _experiment.Trials.First;
-            _currentRound = 0;
+            _currentTrialBlock = 0;
 
             RunTrial(_currentTrial);
         }
@@ -276,6 +278,7 @@ namespace LangBiasTester
         }
         private void CatchResponse(object sender, KeyEventArgs e)
         {
+            // Does not currently have a logic to record the response time (if enabled)
             e.SuppressKeyPress = true;
 
             var response = e.KeyCode;
@@ -290,14 +293,14 @@ namespace LangBiasTester
 
             NextTrial();
         }
-        private void StartNewRound(object sender, KeyEventArgs e)
+        private void StartNewTrialBlock(object sender, KeyEventArgs e)
         {
             e.SuppressKeyPress = true;
-            KeyDown -= StartNewRound;
+            KeyDown -= StartNewTrialBlock;
 
             Controls.Remove(_label);
 
-            _currentRound++;
+            _currentTrialBlock++;
 
             RunTrial(_currentTrial);
         }
@@ -383,7 +386,7 @@ namespace LangBiasTester
             _currentTrial = _currentTrial.Next;
 
             if (_currentTrial == null) ProgramControl();
-            else if (_currentTrial.Value.Round != _currentRound)
+            else if (_currentTrial.Value.Block != _currentTrialBlock)
             {
                 FormManager.GenericLabel
                     (
@@ -392,7 +395,7 @@ namespace LangBiasTester
                     Press any key to continue.
                     """
                     );
-                KeyDown += StartNewRound;
+                KeyDown += StartNewTrialBlock;
             }
             else RunTrial(_currentTrial);
         }

@@ -5,7 +5,9 @@ namespace LangBiasTester.Infrastructure.Models
     internal class Trial
     {
         [JsonInclude]
-        internal Condition Condition { get; set; }
+        internal Stimulus Stimulus { get; set; }
+        [JsonInclude]
+        internal int StimulusNumber { get; set; }
         [JsonInclude]
         internal List<Audio> Audios { get; set; }
         [JsonInclude]
@@ -13,12 +15,14 @@ namespace LangBiasTester.Infrastructure.Models
         [JsonInclude]
         internal Lang? ResponseLang { get; set; }
         [JsonInclude]
-        internal int? Round { get; set; }
-        
-        internal Trial(Condition condition)
+        internal int Block { get; set; }
+        [JsonInclude]
+        internal int ResponseTime { get; set; }
+
+        internal Trial(Stimulus stimulus)
         {
             Audios = [];
-            Condition = condition;
+            Stimulus = stimulus;
         }
     }
 }
