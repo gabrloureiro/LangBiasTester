@@ -1,4 +1,4 @@
-﻿using LangBiasTester.Infrastructure.Models;
+﻿using LangBiasTester.Infrastructure.Enums;
 using System.Text.Json.Serialization;
 
 namespace LangBiasTester.Operators
@@ -6,6 +6,7 @@ namespace LangBiasTester.Operators
     internal class Settings
     {
         public int AdminID { get; set; }
+        public bool AnonymizeParticipantID { get; set; }
         public bool RunDemo { get; set; }
 
 
@@ -15,7 +16,8 @@ namespace LangBiasTester.Operators
 
 
         public int TimeBetweenTrials { get; set; }
-        public int ResponseWindow { get; set; }
+        public int StimulusDuration { get; set; }
+
 
         public bool UseT1I1Shuffling { get; set; }
         public int TrialBlocks { get; set; }
@@ -31,13 +33,16 @@ namespace LangBiasTester.Operators
         public Keys Lang1Direction { get; set; }
         public Keys Lang2Direction { get; set; }
 
+
         public bool ShuffleTextLang { get; set; }
         public bool ShuffleLangDirection { get; set; }
+
 
         public Dictionary<int, int>? Stimuli { get; set; }
         public string? RawAudioFilePath { get; set; }
         public bool UseStaticMixes { get; set; }
         public string? MixedAudioFilePath { get; set; }
+
 
         [JsonIgnore]
         internal Dictionary<Lang, Keys>? LangKeyDictionary { get; set; }

@@ -1,14 +1,10 @@
-﻿namespace LangBiasTester.Infrastructure.Models
+﻿namespace LangBiasTester.Infrastructure.Abstracts
 {
-    internal class Audio
+    internal abstract class Audio
     {
         public string? FileName { get; set; }
         public string? FileLocation { get; set; }
-
         public TimeSpan Duration { get; set; }
-        public Lang? Lang { get; set; }
-        public Dictionary<Lang, int>? MixLangs { get; set; }
-        public VoiceGender? VoiceGender { get; set; }
 
         public int SnippetTimestamp { get; set; }
         public int SnippetDuration { get; set; }

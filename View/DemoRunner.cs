@@ -114,7 +114,7 @@
                 At this point in the program, the trials have all been initialized with the following settings:
                 Stimuli: {stimuliString}
                 Time between trials: {_form._experiment.Settings.TimeBetweenTrials} seconds
-                Response window: {_form._experiment.Settings.ResponseWindow} seconds
+                Response window: {_form._experiment.Settings.StimulusDuration} seconds
                                 
                 After the next screen, the trials will run as normal, as if this was already a proper run of the experiment.
                 There are "rest screens" every time a round of trials ends.

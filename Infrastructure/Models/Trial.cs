@@ -4,25 +4,25 @@ namespace LangBiasTester.Infrastructure.Models
 {
     internal class Trial
     {
+        // Stimulus properties
         [JsonInclude]
         internal Stimulus Stimulus { get; set; }
         [JsonInclude]
         internal int StimulusNumber { get; set; }
-        [JsonInclude]
-        internal List<Audio> Audios { get; set; }
+
+        // Response properties
         [JsonInclude]
         internal Keys? Response { get; set; }
         [JsonInclude]
-        internal Lang? ResponseLang { get; set; }
-        [JsonInclude]
-        internal int Block { get; set; }
+        internal float ResponseConfidence { get; set; }
         [JsonInclude]
         internal int ResponseTime { get; set; }
 
-        internal Trial(Stimulus stimulus)
-        {
-            Audios = [];
-            Stimulus = stimulus;
-        }
+        // Trial block
+        [JsonInclude]
+        internal int Block { get; set; }
+
+        // Constructor
+        internal Trial(Stimulus stimulus) => Stimulus = stimulus;
     }
 }

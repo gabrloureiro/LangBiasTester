@@ -1,10 +1,10 @@
 using LangBiasTester.Infrastructure.Managers;
-using LangBiasTester.Infrastructure.Models;
+using LangBiasTester.Infrastructure.Abstracts;
 using LangBiasTester.Operators.DataHandlers;
-using static LangBiasTester.Infrastructure.Models.Lang;
-using NAudio.Wave;
-using NAudio.Wave.SampleProviders;
+using static LangBiasTester.Infrastructure.Enums.Lang;
 using LangBiasTester.View;
+using LangBiasTester.Infrastructure.Enums;
+using LangBiasTester.Infrastructure.Models;
 
 namespace LangBiasTester
 {
@@ -22,11 +22,10 @@ namespace LangBiasTester
         private readonly DemoRunner _demo;
 
         private readonly System.Windows.Forms.Timer _timer;
-        private readonly Dictionary<Keys, string> _frenchKeysDict;
+        private readonly Dictionary<Keys, string> _frenchKeysDict; //TODO: remove from here
 
         private LinkedListNode<Trial>? _currentTrial;
         private int _currentTrialBlock;
-        private Dictionary<OffsetSampleProvider, WaveOut>? _waveStreams;
 
         private int _programStage;
         #endregion
@@ -223,12 +222,11 @@ namespace LangBiasTester
         #endregion
 
         #region Event Methods
-        private void RegisterIDBoxInput(object sender, KeyEventArgs e)
+        private void RegisterIDBoxInput(object? sender, KeyEventArgs? e)
         {
-            int participantID;
-            var inputIsNumber = int.TryParse(_participantIDBox.Text, out participantID);
+            var inputIsNumber = int.TryParse(_participantIDBox.Text, out int participantID);
 
-            if (!(e.KeyCode == Keys.Enter) || !inputIsNumber) return;
+            if (e == null || e.KeyCode != Keys.Enter || !inputIsNumber) return;
             
             if (participantID == _experiment.Settings.AdminID)
             {
@@ -248,16 +246,16 @@ namespace LangBiasTester
 
             ProgramControl();
         }
-        private void DismissInstructions(object sender, KeyEventArgs e)
+        private void DismissInstructions(object? sender, KeyEventArgs? e)
         {
-            e.SuppressKeyPress = true;
+            if (e != null) e.SuppressKeyPress = true;
             KeyDown -= DismissInstructions;
 
             Controls.Remove(_label);
 
             ProgramControl();
         }
-        private void TimeUp(object sender, EventArgs e)
+        private void TimeUp(object? sender, EventArgs? e)
         {
             ResetTrial();
 
@@ -270,14 +268,14 @@ namespace LangBiasTester
 
             // If time is up and reaction time is being tested, register no response.
             _currentTrial.Value.Response = null;
-            _currentTrial.Value.ResponseLang = null;
 
             Thread.Sleep(_experiment.Settings.TimeBetweenTrials * 1000);
 
             NextTrial();
         }
-        private void CatchResponse(object sender, KeyEventArgs e)
+        private void CatchResponse(object? sender, KeyEventArgs? e)
         {
+            if (e == null) return;
             // Does not currently have a logic to record the response time (if enabled)
             e.SuppressKeyPress = true;
 
@@ -287,15 +285,15 @@ namespace LangBiasTester
             if (!validResponse) return;
             
             ResetTrial();
-            RegisterResponse(response);
+            TrialManager.RegisterResponse(_currentTrial.Value, response);
 
             Thread.Sleep(_experiment.Settings.TimeBetweenTrials * 1000);
 
             NextTrial();
         }
-        private void StartNewTrialBlock(object sender, KeyEventArgs e)
+        private void StartNewTrialBlock(object? sender, KeyEventArgs? e)
         {
-            e.SuppressKeyPress = true;
+            if (e != null) e.SuppressKeyPress = true;
             KeyDown -= StartNewTrialBlock;
 
             Controls.Remove(_label);
@@ -304,9 +302,9 @@ namespace LangBiasTester
 
             RunTrial(_currentTrial);
         }
-        private void Exit(object sender, KeyEventArgs e)
+        private void Exit(object? sender, KeyEventArgs? e)
         {
-            e.SuppressKeyPress = true;
+            if (e != null) e.SuppressKeyPress = true;
             KeyDown -= Exit;
             ProgramControl();
         }
@@ -314,23 +312,17 @@ namespace LangBiasTester
 
         #region Trial Methods
         /// <summary>
-        /// Resets the trial state by stopping timers, detaching event handlers, and disposing of audio streams.
+        /// Resets the trial state by stopping timers and detaching event handlers.
         /// </summary>
         /// <remarks>Call this method to clean up resources and prepare for a new trial. This method
         /// should be invoked before starting a new trial to ensure that previous state and resources do not interfere
         /// with subsequent trials.</remarks>
         private void ResetTrial()
         {
+            TrialManager.EndTrial(_currentTrial.Value);
             TimerStop();
-
             _timer.Tick -= TimeUp;
             KeyDown -= CatchResponse;
-
-            foreach (KeyValuePair<OffsetSampleProvider, WaveOut> stream in _waveStreams)
-            {
-                stream.Value.Stop();
-                stream.Value.Dispose();
-            }
         }
         /// <summary>
         /// Executes a single trial by preparing and playing all associated audio snippets, and sets up
@@ -345,32 +337,7 @@ namespace LangBiasTester
         /// with associated audio snippets.</param>
         private void RunTrial(LinkedListNode<Trial>? currentTrial)
         {
-            _waveStreams = [];
-
-            // Iterates through all audio snippets in the current trial and plays them simultaneously.
-            // If mixed audio is used instead, only one stream will be created.
-            foreach (Audio audio in currentTrial.Value.Audios)
-            {
-                // TODO: find out if can implement ramping in AudioFileReader so ramp is already loaded when playing file
-                // TODO: apply RMS adjustment after ramping (RMS always very last step)
-
-                var waveStream = new OffsetSampleProvider(new AudioFileReader(audio.FileLocation));
-                var waveOut = new WaveOut();
-
-                waveStream.SkipOver = TimeSpan.FromSeconds(audio.SnippetTimestamp);
-
-                waveOut.Init(waveStream);
-
-                _waveStreams.Add(waveStream, waveOut);
-            }
-
-            foreach (KeyValuePair<OffsetSampleProvider, WaveOut> stream in _waveStreams)
-            {
-                stream.Value.Play();
-            }
-
-            // If reaction time is being tested, subscribe keydown event alongside timer event.
-            // Whichever one is triggered first ends the current trial.
+            TrialManager.RunTrial(currentTrial.Value);
             if (_experiment.Settings.TestReactionTime) KeyDown += CatchResponse;
             TimerStart();
         }
@@ -401,23 +368,18 @@ namespace LangBiasTester
         }
         #endregion
 
-        #region Response Methods
+        #region Timer Methods
         private void TimerStart()
         {
             _timer.Enabled = true;
             _timer.Tick += TimeUp;
-            _timer.Interval = _experiment.Settings.ResponseWindow * 1000;
+            _timer.Interval = _experiment.Settings.StimulusDuration * 1000;
             _timer.Start();
         }
         private void TimerStop()
         {
             _timer.Stop();
             _timer.Enabled = false;
-        }
-        private void RegisterResponse(Keys response)
-        {
-            _currentTrial.Value.Response = response;
-            _currentTrial.Value.ResponseLang = _experiment.Settings.LangKeyDictionary.Where(entry => entry.Value == response).First().Key;
         }
         #endregion
     }

@@ -2,12 +2,14 @@
   "AdminID": 42,
   "RunDemo": false,
 
+  "AnonymizeParticipantID": true,
+
   "RunTraining": false,
   "TrainingTrials": 2,
   "TestReactionTime": false,
 
   "TimeBetweenTrials": 1,
-  "ResponseWindow": 2,
+  "StimulusDuration": 2,
   "UseT1I1Shuffling": true,
   "TrialBlocks": 1,
   "SequencesPerTrialBlock": 3,

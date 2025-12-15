@@ -1,4 +1,4 @@
-﻿namespace LangBiasTester.Infrastructure.Models
+﻿namespace LangBiasTester.Infrastructure.Enums
 {
     public enum VoiceGender
     {

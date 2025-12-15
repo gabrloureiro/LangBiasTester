@@ -1,11 +1,13 @@
-﻿using LangBiasTester.Infrastructure.Models;
+﻿using LangBiasTester.Infrastructure.Enums;
+using LangBiasTester.Infrastructure.Abstracts;
+using LangBiasTester.Infrastructure.Models;
 using LangBiasTester.Operators;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace LangBiasTester.Infrastructure.Managers
 {
-    internal class Experiment
+    internal class LangMixExperiment : Experiment
     {
         // Experiment properties to be exported
         internal struct MiniSettings
@@ -18,41 +20,18 @@ namespace LangBiasTester.Infrastructure.Managers
             public int[] StimulusSequence { get; set; }
         }
 
-        internal Settings Settings;
-
         [JsonPropertyName("Settings")]
         internal MiniSettings ExportSettings { get; set; }
 
-        // Participant Info
-        [JsonInclude]
-        internal ParticipantInfo ParticipantInfo { get; set; }
-
-        // Lists
-        [JsonInclude]
-        internal LinkedList<Trial> Trials { get; private set; }
-        private readonly List<Stimulus> Stimuli;
-        private readonly List<Audio> Audios;
-
-        private JsonSerializerOptions _jsonSerializerOptions;
+        private readonly List<LangAudio> Audios;
         private int randomizerSeed;
 
-        internal Experiment(Settings settings, ParticipantInfo participantInfo)
+        internal LangMixExperiment(Settings settings, ParticipantInfo participantInfo) : base(settings, participantInfo)
         {
-            Settings = settings;
-
-            Stimuli = [];
-            Trials = [];
             Audios = [];
-            ParticipantInfo = participantInfo;
-
-            _jsonSerializerOptions = new JsonSerializerOptions
-            {
-                Converters = { new JsonStringEnumConverter() },
-                WriteIndented = true
-            };
         }
         
-        internal void Init()
+        internal override void Init()
         {
             randomizerSeed = ParticipantInfo.ID;
 
@@ -60,21 +39,22 @@ namespace LangBiasTester.Infrastructure.Managers
 
             var audioFilePath = Settings.UseStaticMixes ? Settings.MixedAudioFilePath : Settings.RawAudioFilePath;
 
-            Audios.AddRange(JsonSerializer.Deserialize<List<Audio>>(File.ReadAllText(audioFilePath),_jsonSerializerOptions));
+            Audios.AddRange(JsonSerializer.Deserialize<List<LangAudio>>(File.ReadAllText(audioFilePath),_jsonSerializerOptions));
 
+            // Assign audios to stimuli.
             // If using static mixes, all information is already contained in the audio objects.
             // Otherwise, generate stimuli one by one using information in settings.
             if (Settings.UseStaticMixes)
             {
-                StimulusManager.Init(Stimuli, Audios);
+                StimulusManager.Init(Stimuli, Audios, Settings.StimulusDuration);
             }
             else
             {
-                StimulusManager.Init(Stimuli, Audios, Settings.TestLang1, Settings.TestLang2, Settings.Stimuli);
+                StimulusManager.Init(Stimuli, Audios, Settings.StimulusDuration, Settings.TestLang1, Settings.TestLang2, Settings.Stimuli);
             }
 
             // Initialize trials
-            TrialManager.Init(Trials, Stimuli, Audios, Settings.ResponseWindow, Settings.TrialBlocks, Settings.SequencesPerTrialBlock, randomizerSeed, Settings.UseT1I1Shuffling);
+            TrialManager.Init(Trials, Stimuli, Settings.TrialBlocks, Settings.SequencesPerTrialBlock, randomizerSeed, Settings.UseT1I1Shuffling);
         }
         private void ShuffleLangs()
         {
@@ -110,16 +90,17 @@ namespace LangBiasTester.Infrastructure.Managers
                 { Settings.TestLang2, Settings.Lang2Direction }
             };
         }
-        internal void ExportData()
+
+        internal override void ExportData()
         {
-            ExportSettings = new()
+            ExportSettings = new ()
             {
                 Lang1 = Settings.TestLang1,
                 Lang2 = Settings.TestLang2,
                 ControlIncluded = Settings.IncludeControl,
                 Lang1Direction = Settings.Lang1Direction,
                 Lang2Direction = Settings.Lang2Direction,
-                StimulusSequence = [.. Trials.Select(trial => trial.StimulusNumber)]
+                StimulusSequence = [..Trials.Select(trial => trial.StimulusNumber)]
             };
 
             var jsonString = JsonSerializer.Serialize(this, _jsonSerializerOptions);

@@ -15,7 +15,7 @@ namespace LangBiasTester.Operators
             Settings settings = util.ExtractSettings();
             util.ExtractRawAudioMetadata(settings, false);
 
-            Experiment experiment = new(settings, new ParticipantInfo());
+            LangMixExperiment experiment = new(settings, new ParticipantInfo());
 
             ProgramView form = new (experiment, util);
 

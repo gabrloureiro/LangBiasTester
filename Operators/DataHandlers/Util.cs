@@ -1,7 +1,8 @@
-﻿using LangBiasTester.Infrastructure.Managers;
+﻿using LangBiasTester.Infrastructure.Enums;
+using LangBiasTester.Infrastructure.Managers;
+using LangBiasTester.Infrastructure.Abstracts;
 using LangBiasTester.Infrastructure.Models;
 using NAudio.Wave;
-using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -65,7 +66,7 @@ namespace LangBiasTester.Operators.DataHandlers
                 return;
             }
 
-            List<Audio> audios = [];
+            List<LangAudio> audios = [];
 
             foreach (DirectoryInfo language in audioDirectory.GetDirectories())
             {
@@ -93,7 +94,7 @@ namespace LangBiasTester.Operators.DataHandlers
                     {
                         if (audioFile.Extension != ".wav") continue;
 
-                        var metadata = new Audio
+                        var metadata = new LangAudio
                         {
                             FileName = audioFile.Name,
                             FileLocation = audioFile.FullName,
@@ -123,7 +124,7 @@ namespace LangBiasTester.Operators.DataHandlers
         /// <exception cref="Exception">Thrown if the audio data cannot be deserialized from the specified file or if the file does not exist.</exception>
         internal void CreateStaticAudioMixes(Settings settings)
         {
-            List<Audio> mixedAudios = [];
+            List<LangAudio> mixedAudios = [];
 
             // Find AudioMetadata JSON file, create if it does not exist
             var mixedAudioDirectory = (new DirectoryInfo(settings.MixedAudioFilePath)).Parent;
@@ -131,12 +132,12 @@ namespace LangBiasTester.Operators.DataHandlers
 
             // Read raw audio metadata from JSON file
             var audioJsonString = File.ReadAllText(settings.RawAudioFilePath);
-            var audioJson = JsonSerializer.Deserialize<IEnumerable<Audio>>(audioJsonString, _options).ToList();
+            var audioJson = JsonSerializer.Deserialize<IEnumerable<LangAudio>>(audioJsonString, _options).ToList();
             if (audioJson == null) ErrorManager.ThrowError("Could not configure experiment. Check that AudioMetadata.json exists.");
 
             // Separate female and male audios
-            List<Audio> femaleAudios = ExtractVoicesByGender(audioJson, VoiceGender.Female, [settings.TestLang1, settings.TestLang2]);
-            List<Audio> maleAudios = ExtractVoicesByGender(audioJson, VoiceGender.Male, [settings.TestLang1, settings.TestLang2]);
+            List<LangAudio> femaleAudios = ExtractVoicesByGender(audioJson, VoiceGender.Female, [settings.TestLang1, settings.TestLang2]);
+            List<LangAudio> maleAudios = ExtractVoicesByGender(audioJson, VoiceGender.Male, [settings.TestLang1, settings.TestLang2]);
 
             var totalAudios = femaleAudios.Count + maleAudios.Count;
 
@@ -160,7 +161,7 @@ namespace LangBiasTester.Operators.DataHandlers
 
             for (int i = 0; i <= totalAudios/2; i++)
             {
-                List<Audio> audiosToMix = [];
+                List<LangAudio> audiosToMix = [];
 
                 // Select audios according to current language balance
                 SelectAudios(audiosToMix, femaleAudios, maleAudios, lang2FemaleCount, lang2MaleCount, [settings.TestLang1, settings.TestLang2]);
@@ -170,7 +171,7 @@ namespace LangBiasTester.Operators.DataHandlers
                 else lang2MaleCount++;
 
                 // Create Audio object from audiosToMix and add it to mixedAudios
-                mixedAudios.Add(AudioManager.CreateStaticAudioMix(audiosToMix, audioFolderString));
+                mixedAudios.Add(LangAudioManager.CreateStaticAudioMix(audiosToMix, audioFolderString));
 
                 progressText.AppendText($"Created static audio mix with audios:\r\n{string.Join(",\r\n", audiosToMix.Select(audio => audio.FileName))}.\r\n");
             }
@@ -183,7 +184,7 @@ namespace LangBiasTester.Operators.DataHandlers
 
             progressText.AppendText("MixedAudioMetadata.json written.");
         }
-        private static void SelectAudios(List<Audio> audiosToMix, List<Audio> femaleAudios, List<Audio> maleAudios, int lang2FemaleCount, int lang2MaleCount, List<Lang> testLangs)
+        private static void SelectAudios(List<LangAudio> audiosToMix, List<LangAudio> femaleAudios, List<LangAudio> maleAudios, int lang2FemaleCount, int lang2MaleCount, List<Lang> testLangs)
         {
             var lang1FemaleCount = femaleAudios.Count / 2 - lang2FemaleCount;
             var lang1MaleCount = maleAudios.Count / 2 - lang2MaleCount;
@@ -202,7 +203,7 @@ namespace LangBiasTester.Operators.DataHandlers
             audiosToMix.AddRange(randomizedFemaleAudios.Where(audio => audio.Lang == testLangs[1]).Take(lang2FemaleCount));
             audiosToMix.AddRange(randomizedMaleAudios.Where(audio => audio.Lang == testLangs[1]).Take(lang2MaleCount));
         }
-        private static List<Audio> ExtractVoicesByGender(List<Audio> audios, VoiceGender gender, List<Lang> testLangs)
+        private static List<LangAudio> ExtractVoicesByGender(List<LangAudio> audios, VoiceGender gender, List<Lang> testLangs)
         {
             return [.. audios.Where(audio => audio.VoiceGender == gender && audio.Lang.HasValue && testLangs.Contains(audio.Lang.Value))];
         }
