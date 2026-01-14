@@ -424,3 +424,5 @@ FodyWeavers.xsd
 /.docs/designseqlist.pdf
 /.docs/design_sequences.txt
 /outputs
+/config/audio/MixedAudioMetadata.json
+/config/audio/RawAudioMetadata.json
