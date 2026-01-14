@@ -47,7 +47,6 @@ namespace LangBiasTester.Infrastructure.Managers
         internal static void RegisterResponse(Trial trial, Keys response)
         {
             trial.Response = response;
-
             //_currentTrial.Value.ResponseLang = _experiment.Settings.LangKeyDictionary.Where(entry => entry.Value == response).First().Key;
         }
         

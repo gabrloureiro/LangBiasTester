@@ -1,9 +1,10 @@
-﻿using LangBiasTester.Infrastructure.Enums;
-using LangBiasTester.Infrastructure.Abstracts;
+﻿using LangBiasTester.Infrastructure.Abstracts;
+using LangBiasTester.Infrastructure.Enums;
 using LangBiasTester.Infrastructure.Models;
 using LangBiasTester.Operators;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Windows.Forms;
 
 namespace LangBiasTester.Infrastructure.Managers
 {
@@ -12,11 +13,9 @@ namespace LangBiasTester.Infrastructure.Managers
         // Experiment properties to be exported
         internal struct MiniSettings
         {
-            public Lang Lang1 { get; set; }
-            public Lang Lang2 { get; set; }
+            public List<Lang> Langs { get; set; }
+            public List<List<Keys>> LangKeys { get; set; }
             public bool ControlIncluded { get; set; }
-            public Keys Lang1Direction { get; set; }
-            public Keys Lang2Direction { get; set; }
             public int[] StimulusSequence { get; set; }
         }
 
@@ -35,7 +34,7 @@ namespace LangBiasTester.Infrastructure.Managers
         {
             randomizerSeed = ParticipantInfo.ID;
 
-            ShuffleLangs();
+            InitLangs();
 
             var audioFilePath = Settings.UseStaticMixes ? Settings.MixedAudioFilePath : Settings.RawAudioFilePath;
 
@@ -50,56 +49,65 @@ namespace LangBiasTester.Infrastructure.Managers
             }
             else
             {
-                StimulusManager.Init(Stimuli, Audios, Settings.StimulusDuration, Settings.TestLang1, Settings.TestLang2, Settings.Stimuli);
+                StimulusManager.Init(Stimuli, Audios, Settings.StimulusDuration, Settings.TestLangs, Settings.Stimuli);
             }
 
             // Initialize trials
             TrialManager.Init(Trials, Stimuli, Settings.TrialBlocks, Settings.SequencesPerTrialBlock, randomizerSeed, Settings.UseT1I1Shuffling);
         }
-        private void ShuffleLangs()
+        private void InitLangs()
         {
+            if (Settings.TestLangs.Count != Settings.LangKeys.Count) ErrorManager.ThrowError("Not enough key assignments to languages. Check settings.json.");
+
+            Random random = new(randomizerSeed);
+
             if (Settings.ShuffleTextLang)
             {
-                Random random = new(randomizerSeed);
-                var lang1 = Settings.TestLang1;
-                var lang2 = Settings.TestLang2;
-
-                Lang[] langs = [lang1, lang2];
-
+                var langs = Settings.TestLangs.ToArray();
                 random.Shuffle(langs);
-
-                Settings.TestLang1 = langs[0];
-                Settings.TestLang2 = langs[1];
+                Settings.TestLangs = [.. langs];
             }
+
             if (Settings.ShuffleLangDirection)
             {
-                Random random = new(randomizerSeed);
-                var dir1 = Settings.Lang1Direction;
-                var dir2 = Settings.Lang2Direction;
-
-                Keys[] dirs = [dir1, dir2];
-
-                random.Shuffle(dirs);
-
-                Settings.Lang1Direction = dirs[0];
-                Settings.Lang2Direction = dirs[1];
+                var langKeys = Settings.LangKeys.ToArray();
+                random.Shuffle(langKeys);
+                Settings.LangKeys = [.. langKeys];
             }
-            Settings.LangKeyDictionary = new()
+
+            Settings.LangKeyDictionary = [];
+            Settings.ConfidenceRatings = [];
+            Settings.ValidKeys = [];
+
+            // Iterate through test languages
+            for (int i = 0; i < Settings.TestLangs.Count; i++)
             {
-                { Settings.TestLang1, Settings.Lang1Direction },
-                { Settings.TestLang2, Settings.Lang2Direction }
-            };
+                // For each language, add a {Lang, List<Keys>} pair associating a group of keys with a language
+                Settings.LangKeyDictionary.Add(Settings.TestLangs[i], Settings.LangKeys[i]);
+
+                // Compute confidence steps
+                var langKeyCount = Settings.LangKeys[i].Count;
+                float langConfidenceSteps = 1 / langKeyCount;
+
+                // Iterate through each key in the language's key list
+                for (int j = 0; j < langKeyCount; j++)
+                {
+                    // For each key, associate a confidence rating
+                    Settings.ConfidenceRatings.Add(Settings.LangKeys[i][j], (float)Math.Round(langConfidenceSteps * (j + 1), 2));
+                }
+
+                // Add keys to list of valid response keys
+                Settings.ValidKeys.AddRange(Settings.LangKeys[i]);
+            }
         }
 
         internal override void ExportData()
         {
-            ExportSettings = new ()
+            ExportSettings = new()
             {
-                Lang1 = Settings.TestLang1,
-                Lang2 = Settings.TestLang2,
+                Langs = Settings.TestLangs,
                 ControlIncluded = Settings.IncludeControl,
-                Lang1Direction = Settings.Lang1Direction,
-                Lang2Direction = Settings.Lang2Direction,
+                LangKeys = Settings.LangKeys,
                 StimulusSequence = [..Trials.Select(trial => trial.StimulusNumber)]
             };
 

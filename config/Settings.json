@@ -1,38 +1,44 @@
 {
   "AdminID": 42,
-  "RunDemo": false,
-
   "AnonymizeParticipantID": true,
+
+  "RunDemo": false,
 
   "RunTraining": false,
   "TrainingTrials": 2,
   "TestReactionTime": false,
+  "TestConfidence": false,
 
   "TimeBetweenTrials": 1,
   "StimulusDuration": 2,
+
   "UseT1I1Shuffling": true,
   "TrialBlocks": 1,
   "SequencesPerTrialBlock": 3,
 
-  "TestLang1": "EN",
-  "TestLang2": "FR",
+  "TestLangs": [
+    "EN",
+    "FR"
+  ],
   "IncludeControl": false,
   "ControlLang": "CN",
 
-  "Lang1Direction": "Left",
-  "Lang2Direction": "Right",
+  "LangKeys": [
+    [ "d", "s", "a" ],
+    [ "j", "k", "l" ]
+  ],
 
   "ShuffleTextLang": true,
   "ShuffleLangDirection": true,
 
-  "Stimuli": {
-    "100": 0,
-    "80": 20,
-    "60": 40,
-    "40": 60,
-    "20": 80,
-    "0": 100
-  },
+  "Stimuli": [
+    [ 100, 0 ],
+    [ 80, 20 ],
+    [ 60, 40 ],
+    [ 40, 60 ],
+    [ 20, 80 ],
+    [ 0, 100 ]
+  ],
 
   "RawAudioFilePath": "config/audio/RawAudioMetadata.json",
   "UseStaticMixes": true,

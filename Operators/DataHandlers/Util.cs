@@ -136,8 +136,8 @@ namespace LangBiasTester.Operators.DataHandlers
             if (audioJson == null) ErrorManager.ThrowError("Could not configure experiment. Check that AudioMetadata.json exists.");
 
             // Separate female and male audios
-            List<LangAudio> femaleAudios = ExtractVoicesByGender(audioJson, VoiceGender.Female, [settings.TestLang1, settings.TestLang2]);
-            List<LangAudio> maleAudios = ExtractVoicesByGender(audioJson, VoiceGender.Male, [settings.TestLang1, settings.TestLang2]);
+            List<LangAudio> femaleAudios = ExtractVoicesByGender(audioJson, VoiceGender.Female, settings.TestLangs);
+            List<LangAudio> maleAudios = ExtractVoicesByGender(audioJson, VoiceGender.Male, settings.TestLangs);
 
             var totalAudios = femaleAudios.Count + maleAudios.Count;
 
@@ -155,7 +155,8 @@ namespace LangBiasTester.Operators.DataHandlers
             // Create form to show progress
             var progressText = CreateProgressForm();
 
-            // Iterate through audios to add create mixes of different language proportions
+            // Iterate through audios to add create mixes of different language proportions.
+            // NOTE: currently only works for 2 languages. Mixing 3+ languages would require iterating pairwise.
             var lang2FemaleCount = 0;
             var lang2MaleCount = 0;
 
@@ -164,7 +165,7 @@ namespace LangBiasTester.Operators.DataHandlers
                 List<LangAudio> audiosToMix = [];
 
                 // Select audios according to current language balance
-                SelectAudios(audiosToMix, femaleAudios, maleAudios, lang2FemaleCount, lang2MaleCount, [settings.TestLang1, settings.TestLang2]);
+                SelectAudios(audiosToMix, femaleAudios, maleAudios, lang2FemaleCount, lang2MaleCount, settings.TestLangs);
 
                 // Update female count if iterator is even, male if odd to ensure audios of the same gender are swapped in each iteration
                 if (i % 2 == 0) lang2FemaleCount++;

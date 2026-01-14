@@ -1,4 +1,5 @@
-﻿using LangBiasTester.Infrastructure.Enums;
+﻿using LangBiasTester.Infrastructure.Abstracts;
+using LangBiasTester.Infrastructure.Enums;
 using System.Text.Json.Serialization;
 
 namespace LangBiasTester.Operators
@@ -7,12 +8,14 @@ namespace LangBiasTester.Operators
     {
         public int AdminID { get; set; }
         public bool AnonymizeParticipantID { get; set; }
+
         public bool RunDemo { get; set; }
 
 
         public bool RunTraining { get; set; }
         public int TrainingTrials { get; set; }
         public bool TestReactionTime { get; set; }
+        public bool TestConfidence { get; set; }
 
 
         public int TimeBetweenTrials { get; set; }
@@ -24,27 +27,34 @@ namespace LangBiasTester.Operators
         public int SequencesPerTrialBlock { get; set; }
 
 
-        public Lang TestLang1 { get; set; }
-        public Lang TestLang2 { get; set; }
+        public List<Lang>? TestLangs { get; set; }
         public bool IncludeControl { get; set; }
         public Lang ControlLang { get; set; }
 
-        
-        public Keys Lang1Direction { get; set; }
-        public Keys Lang2Direction { get; set; }
+
+        public List<List<Keys>>? LangKeys { get; set; }
 
 
         public bool ShuffleTextLang { get; set; }
         public bool ShuffleLangDirection { get; set; }
 
 
-        public Dictionary<int, int>? Stimuli { get; set; }
+        public List<List<int>>? Stimuli { get; set; }
         public string? RawAudioFilePath { get; set; }
         public bool UseStaticMixes { get; set; }
         public string? MixedAudioFilePath { get; set; }
 
 
+        public Dictionary<Lang, string>? Instructions { get; set; }
+
+
         [JsonIgnore]
-        internal Dictionary<Lang, Keys>? LangKeyDictionary { get; set; }
-    }
+        internal Dictionary<Lang, List<Keys>>? LangKeyDictionary { get; set; }
+
+        [JsonIgnore]
+        internal Dictionary<Keys, float>? ConfidenceRatings { get; set; }
+
+        [JsonIgnore]
+        internal List<Keys>? ValidKeys { get; set; }
+        }
 }

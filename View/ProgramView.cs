@@ -22,7 +22,6 @@ namespace LangBiasTester
         private readonly DemoRunner _demo;
 
         private readonly System.Windows.Forms.Timer _timer;
-        private readonly Dictionary<Keys, string> _frenchKeysDict; //TODO: remove from here
 
         private LinkedListNode<Trial>? _currentTrial;
         private int _currentTrialBlock;
@@ -49,12 +48,6 @@ namespace LangBiasTester
             _demo = new(this);
 
             _timer = new();
-
-            _frenchKeysDict = new()
-            {
-                { Keys.Left, "Gauche" },
-                { Keys.Right, "Droite" }
-            };
         }
         private void Form1_Load(object sender, EventArgs e)
         {
@@ -139,18 +132,27 @@ namespace LangBiasTester
         /// </remarks>
         internal void RunInstructions()
         {
-            Dictionary<Lang, string> instructions = new()
-            {
-                { 
-                    EN, $"You will be presented with a series of sounds. Your task is to indicate whether what you hear is English (by pressing the " +
-                    $"{_experiment.Settings.LangKeyDictionary[EN].ToString().ToLower()} arrow key) or French (by pressing the {_experiment.Settings.LangKeyDictionary[FR].ToString().ToLower()} arrow key)."
-                },
-                {
-                    FR, $"Vous serez presenté.e avec des différents sons. Votre rôle est d'indiquer si ce que vous entendiez est Français (en appuyant la flèche " +
-                    $"{_frenchKeysDict[_experiment.Settings.LangKeyDictionary[FR]].ToLower()}) ou Anglais (en appuyant la flèche {_frenchKeysDict[_experiment.Settings.LangKeyDictionary[EN]].ToLower()})."
+            var instructions = new Dictionary<Lang, string>();
 
-                }
-            };
+            if (_experiment.Settings.TestConfidence)
+            {
+                instructions.Add(EN, "");
+                instructions.Add(FR, "");
+            }
+            else
+            {
+                instructions.Add(
+                    EN, $"You will be presented with a series of sounds. Your task is to indicate whether what you hear is " +
+                        $"English (by pressing {_experiment.Settings.LangKeyDictionary[EN][0]}) or " +
+                        $"French (by pressing {_experiment.Settings.LangKeyDictionary[FR][0]})."
+                    );
+
+                instructions.Add(
+                    FR, $"Vous serez presenté.e avec des différents sons. Votre rôle est d'indiquer si ce que vous entendiez est " +
+                        $"Français (en appuyant {_experiment.Settings.LangKeyDictionary[FR][0]}) ou " +
+                        $"Anglais (en appuyant {_experiment.Settings.LangKeyDictionary[EN][0]})."
+                    );
+            }
 
             FormManager.SetUpControl
                 (
@@ -160,7 +162,7 @@ namespace LangBiasTester
                 new Size(1440, 1080),
                 Color.Black,
                 new Font("Arial", 32F, FontStyle.Bold, GraphicsUnit.Point, 0),
-                $"{instructions[_experiment.Settings.TestLang1]}\n\n{instructions[_experiment.Settings.TestLang2]}"
+                $"{instructions[_experiment.Settings.TestLangs[0]]}\n\n{instructions[_experiment.Settings.TestLangs[1]]}"
                 );
 
             _label.TextAlign = ContentAlignment.MiddleCenter;
@@ -218,6 +220,24 @@ namespace LangBiasTester
             _experiment.ExportData();
 
             KeyDown += Exit;
+        }
+
+        internal void InterruptExperiment()
+        {
+            var exit = MessageBox.Show("It appears you have pressed the escape key. Would you like to terminate the experiment here?", "Interrupt Experiment?", MessageBoxButtons.YesNo);
+
+            if (exit == DialogResult.Yes)
+            {
+                var keepData = MessageBox.Show("Would you like to register the data from this run?", "Keep Data?", MessageBoxButtons.YesNoCancel);
+
+                if (keepData == DialogResult.Yes)
+                {
+                    KeyDown -= CatchResponse;
+                    EndExperiment();
+                }
+                else if (keepData == DialogResult.Cancel) return;
+                else Application.Exit();
+            }
         }
         #endregion
 
@@ -280,8 +300,10 @@ namespace LangBiasTester
             e.SuppressKeyPress = true;
 
             var response = e.KeyCode;
-            var validResponse = response == Keys.Right || response == Keys.Left;
 
+            if (response == Keys.Escape) InterruptExperiment();
+            
+            var validResponse = _experiment.Settings.ValidKeys.Contains(response);
             if (!validResponse) return;
             
             ResetTrial();

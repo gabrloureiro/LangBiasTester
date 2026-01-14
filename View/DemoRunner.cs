@@ -97,9 +97,9 @@
             var stimuli = _form._experiment.Settings.Stimuli;
             string stimuliString = "";
 
-            foreach (KeyValuePair<int, int> stimulus in stimuli)
+            foreach (var stimulus in stimuli)
             {
-                stimuliString += $"{stimulus.Key}/{stimulus.Value}, ";
+                stimuliString += $"{stimulus[0]}/{stimulus[1]}, ";
             }
 
             stimuliString = stimuliString.TrimEnd(',', ' ');

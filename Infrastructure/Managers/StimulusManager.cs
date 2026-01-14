@@ -1,6 +1,7 @@
 ﻿using LangBiasTester.Infrastructure.Abstracts;
 using LangBiasTester.Infrastructure.Enums;
 using LangBiasTester.Infrastructure.Models;
+using LangBiasTester.Operators;
 using NAudio.Wave;
 using NAudio.Wave.SampleProviders;
 
@@ -65,23 +66,36 @@ namespace LangBiasTester.Infrastructure.Managers
             }
         }
         // generates stimuli based on explicit ratios given (e.g., 100/0, 75/25, 50/50, 25/75, 0/100)
-        internal static void Init(List<Stimulus> stimuli, List<LangAudio> audioList, int stimulusDuration, Lang lang1, Lang lang2, Dictionary<int, int> explicitRatios)
+        internal static void Init(List<Stimulus> stimuli, List<LangAudio> audioList, int stimulusDuration, List<Lang> langs, List<List<int>> explicitRatios)
         {
-            var lang1List = audioList.Where(audio => (audio.Lang == lang1)).ToList();
-            var lang2List = audioList.Where(audio => (audio.Lang == lang2)).ToList();
+            var ratioTotals = explicitRatios.Select(ratioList => ratioList.Sum());
+            if (ratioTotals.Any(sum => sum != 100)) ErrorManager.ThrowError("Not all ratios add up to 100%. Check settings.json.");
+            if (langs.Count != explicitRatios.Count) ErrorManager.ThrowError("Missing ratio for some languages. Check settings.json.");
 
-            var audioCount = Math.Min(lang1List.Count, lang2List.Count);
+            var langAudios = new Dictionary<Lang, List<LangAudio>>();
 
-            foreach (KeyValuePair<int, int> ratio in explicitRatios)
+            foreach (var lang in langs)
             {
-                int lang1ct = audioCount*ratio.Key / 100;
-                int lang2ct = audioCount*ratio.Value / 100;
+                langAudios.Add(lang, [.. audioList.Where(audio => (audio.Lang == lang))]);
+            }
 
-                stimuli.Add(new Stimulus(lang1, lang2, lang1ct, lang2ct));
+            var audioCounts = langAudios.Values.Select(audioList => audioList.Count);
+            var audioCount = audioCounts.Min();
+
+            foreach (var ratio in explicitRatios)
+            {
+                var langCounts = new Dictionary<Lang, int>();
+
+                for (int i = 0; i < langs.Count; i++)
+                {
+                    langCounts.Add(langs[i], ratio[i] / 100);
+                }
+
+                stimuli.Add(new Stimulus(langCounts));
             }
         }
         // TODO (low-priority): generates stimuli based on the increment in percentage (e.g., incr=25 will generate the same list as above)
-        internal static void Init(List<Stimulus> stimuli, List<LangAudio> audioList, int stimulusDuration, Lang lang1, Lang lang2, int percentageIncrement)
+        internal static void Init(List<Stimulus> stimuli, List<LangAudio> audioList, int stimulusDuration, List<Lang> langs, int percentageIncrement)
         {
             // finds number of audios (validates split), converts from %increment to discrete audio increment and calls Init overload underneath
         }
