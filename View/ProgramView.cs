@@ -250,6 +250,7 @@ namespace LangBiasTester
                 return;
             }
 
+            StopTrial();
             ResetTrial();
 
             // If time is up and reaction time is being tested, register no response.
@@ -305,6 +306,11 @@ namespace LangBiasTester
         #endregion
 
         #region Trial Methods
+        private void StopTrial()
+        {
+            TimerStop();
+            TrialManager.EndTrial(_currentTrial.Value);
+        }
         /// <summary>
         /// Resets the trial state by stopping timers and detaching event handlers.
         /// </summary>
@@ -313,8 +319,6 @@ namespace LangBiasTester
         /// with subsequent trials.</remarks>
         private void ResetTrial()
         {
-            TrialManager.EndTrial(_currentTrial.Value);
-            TimerStop();
             _timer.Tick -= TimeUp;
             KeyDown -= CatchResponse;
         }
@@ -372,7 +376,7 @@ namespace LangBiasTester
 
         private void CollectResponse()
         {
-            List<Label> confidenceRatings = [];
+            StopTrial();
 
             FormManager.GenericLabel
                 (
