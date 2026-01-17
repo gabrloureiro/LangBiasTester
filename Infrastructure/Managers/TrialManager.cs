@@ -1,5 +1,6 @@
 ﻿using LangBiasTester.Infrastructure.Models;
 using LangBiasTester.Operators;
+using LangBiasTester.Infrastructure.Enums;
 
 namespace LangBiasTester.Infrastructure.Managers
 {
@@ -44,10 +45,11 @@ namespace LangBiasTester.Infrastructure.Managers
             trials.AddLast(newTrial);
         }
 
-        internal static void RegisterResponse(Trial trial, Keys response)
+        internal static void RegisterResponse(Trial trial, Keys response, float responseConfidence=0, Lang responseLang = default)
         {
             trial.Response = response;
-            //_currentTrial.Value.ResponseLang = _experiment.Settings.LangKeyDictionary.Where(entry => entry.Value == response).First().Key;
+            if (responseConfidence > 0) trial.ResponseConfidence = responseConfidence;
+            if (responseLang != default) trial.ResponseLang = responseLang;
         }
         
         internal static void RunTrial(Trial trial)

@@ -6,7 +6,7 @@
         public string? FileLocation { get; set; }
         public TimeSpan Duration { get; set; }
 
-        public int SnippetTimestamp { get; set; }
-        public int SnippetDuration { get; set; }
+        public TimeSpan SnippetTimestamp { get; set; }
+        public TimeSpan SnippetDuration { get; set; }
     }
 }

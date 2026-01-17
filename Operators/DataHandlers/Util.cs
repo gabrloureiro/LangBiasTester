@@ -28,13 +28,13 @@ namespace LangBiasTester.Operators.DataHandlers
         /// <exception cref="Exception">Thrown if the deserialization process results in a null <see cref="Settings"/> object.</exception>
         internal Settings ExtractSettings()
         {
-            var jsonString = File.ReadAllText("config/Settings.json"); //rewrite so it finds file instead of relying on specific path
+            var jsonString = File.ReadAllText("config/Settings.json");
 
             var settings = JsonSerializer.Deserialize<Settings>(jsonString, _options);
 
             if (settings == null) ErrorManager.ThrowError("Could not configure experiment. Check that settings.json exists.");
 
-            if (settings.TrialBlocks < 1) ErrorManager.ThrowError($"Insufficient trial blocks: Trial Blocks set to {settings.TrialBlocks}.");
+            if (settings.TrialBlocks < 1) ErrorManager.ThrowError($"At least one trial block is needed (TrialBlocks currently set to {settings.TrialBlocks}).");
 
             return settings;
         }
@@ -58,8 +58,10 @@ namespace LangBiasTester.Operators.DataHandlers
         {
             var audioDirectory = (new DirectoryInfo(settings.RawAudioFilePath)).Parent;
 
+            // Exit method if AudioMetadata.json already exists and overrideExisting is false
             if (File.Exists(settings.RawAudioFilePath) && !overrideExisting) return;
 
+            // Check that audio directory structure is correct
             if (audioDirectory.GetDirectories().Length == 0)
             {
                 ErrorManager.ShowError("Audio directories not found.");
@@ -68,14 +70,18 @@ namespace LangBiasTester.Operators.DataHandlers
 
             List<LangAudio> audios = [];
 
+            // Iterate through language directories
             foreach (DirectoryInfo language in audioDirectory.GetDirectories())
             {
+                // If directory is "Mixed", skip it
                 if (language.Name == "Mixed") continue;
+                // Check that language directory name is correct
                 if (!Enum.TryParse(language.Name, out Lang lang))
                 {
                     ErrorManager.ShowError($"Incorrect naming format: {language.Name}.");
                     return;
                 }
+                // Check that voice gender directories exist
                 if (language.GetDirectories().Length == 0)
                 {
                     ErrorManager.ShowError("Voice gender directories not found.");
@@ -84,16 +90,20 @@ namespace LangBiasTester.Operators.DataHandlers
 
                 foreach (DirectoryInfo voiceGender in language.GetDirectories())
                 {
+                    // Check that voice gender directory name is correct
                     if (!Enum.TryParse(voiceGender.Name, out VoiceGender gender))
                     {
                         ErrorManager.ShowError($"Incorrect naming format: {voiceGender.Name}.");
                         return;
                     };
 
+                    // Iterate through audio files for each gender
                     foreach (FileInfo audioFile in voiceGender.GetFiles())
                     {
+                        // Only process .wav files
                         if (audioFile.Extension != ".wav") continue;
 
+                        // Extract metadata
                         var metadata = new LangAudio
                         {
                             FileName = audioFile.Name,
@@ -107,6 +117,8 @@ namespace LangBiasTester.Operators.DataHandlers
                     }
                 }
             }
+
+            // Write AudioMetadata JSON file to register information about raw audios
             var jsonString = JsonSerializer.Serialize(audios, _options);
             File.WriteAllText($"{audioDirectory}/RawAudioMetadata.json", jsonString);
         }
@@ -132,12 +144,19 @@ namespace LangBiasTester.Operators.DataHandlers
 
             // Read raw audio metadata from JSON file
             var audioJsonString = File.ReadAllText(settings.RawAudioFilePath);
-            var audioJson = JsonSerializer.Deserialize<IEnumerable<LangAudio>>(audioJsonString, _options).ToList();
-            if (audioJson == null) ErrorManager.ThrowError("Could not configure experiment. Check that AudioMetadata.json exists.");
+            var allAudios = JsonSerializer.Deserialize<IEnumerable<LangAudio>>(audioJsonString, _options).ToList();
+            if (allAudios == null) ErrorManager.ThrowError("Could not configure experiment. Check that AudioMetadata.json exists.");
+
+            // Trim audio list to desired count
+            if (settings.AudioCount > allAudios.Count)
+            {
+                ErrorManager.ShowError($"Requested audio count ({settings.AudioCount}) exceeds available audios ({allAudios.Count}). Using all available audios.");
+                settings.AudioCount = allAudios.Count;
+            }
 
             // Separate female and male audios
-            List<LangAudio> femaleAudios = ExtractVoicesByGender(audioJson, VoiceGender.Female, settings.TestLangs);
-            List<LangAudio> maleAudios = ExtractVoicesByGender(audioJson, VoiceGender.Male, settings.TestLangs);
+            List<LangAudio> femaleAudios = [.. ExtractVoicesByGender(allAudios, VoiceGender.Female, settings.TestLangs).Take(settings.AudioCount * settings.TestLangs.Count)];
+            List<LangAudio> maleAudios = [.. ExtractVoicesByGender(allAudios, VoiceGender.Male, settings.TestLangs).Take(settings.AudioCount * settings.TestLangs.Count)];
 
             var totalAudios = femaleAudios.Count + maleAudios.Count;
 
@@ -145,6 +164,12 @@ namespace LangBiasTester.Operators.DataHandlers
             if (femaleAudios.Count != maleAudios.Count)
             {
                 ErrorManager.ShowError($"Voice gender distribution is not equal ({femaleAudios.Count} female audios and {maleAudios.Count} male audios).");
+                return;
+            }
+
+            if (femaleAudios.Count > settings.AudioCount || maleAudios.Count > settings.AudioCount)
+            {
+                ErrorManager.ShowError($"Number of audios requested exceeds number of audios for one or both genders.\nAudios requested: {settings.AudioCount} per language, {settings.AudioCount * settings.TestLangs.Count} total.\nTotal male audios: {maleAudios.Count}, total female audios: {femaleAudios.Count})");
                 return;
             }
 
@@ -160,21 +185,35 @@ namespace LangBiasTester.Operators.DataHandlers
             var lang2FemaleCount = 0;
             var lang2MaleCount = 0;
 
+            // Get morph steps to only mix audios with the given proportions
+            var morphSteps = GetMorphSteps(settings);
+
             for (int i = 0; i <= totalAudios/2; i++)
             {
-                List<LangAudio> audiosToMix = [];
+                var lang2Audios = lang2FemaleCount + lang2MaleCount;
+                var lang1Audios = totalAudios/2 - lang2Audios;
 
-                // Select audios according to current language balance
-                SelectAudios(audiosToMix, femaleAudios, maleAudios, lang2FemaleCount, lang2MaleCount, settings.TestLangs);
+                // If current morph step is in the list of morph steps, create audio for it
+                List<int> curMorphStep = [
+                    lang1Audios * 100 / (totalAudios / 2),
+                    lang2Audios * 100 / (totalAudios / 2)
+                    ];
+                if (morphSteps.Where(morphStep => morphStep.SequenceEqual(curMorphStep)).Any())
+                {
+                    List<LangAudio> audiosToMix = [];
 
-                // Update female count if iterator is even, male if odd to ensure audios of the same gender are swapped in each iteration
+                    // Select audios according to current language balance
+                    SelectAudios(audiosToMix, femaleAudios, maleAudios, lang2FemaleCount, lang2MaleCount, settings.TestLangs);
+
+                    // Create Audio object from audiosToMix and add it to mixedAudios
+                    mixedAudios.Add(LangAudioManager.CreateStaticAudioMix(audiosToMix, audioFolderString));
+
+                    progressText.AppendText($"Created static audio mix with audios:\r\n{string.Join(",\r\n", audiosToMix.Select(audio => audio.FileName))}.\r\n");
+                }
+
+                // To ensure audios of the same gender are swapped in each iteration, update female count if iterator is even, male if odd
                 if (i % 2 == 0) lang2FemaleCount++;
                 else lang2MaleCount++;
-
-                // Create Audio object from audiosToMix and add it to mixedAudios
-                mixedAudios.Add(LangAudioManager.CreateStaticAudioMix(audiosToMix, audioFolderString));
-
-                progressText.AppendText($"Created static audio mix with audios:\r\n{string.Join(",\r\n", audiosToMix.Select(audio => audio.FileName))}.\r\n");
             }
 
             progressText.AppendText("Static audio mixes created.\r\n");
@@ -185,6 +224,35 @@ namespace LangBiasTester.Operators.DataHandlers
 
             progressText.AppendText("MixedAudioMetadata.json written.");
         }
+        private static List<List<int>> GetMorphSteps(Settings settings)
+        {
+            if (settings.UseExplicitMorphSteps) return settings.MorphSteps;
+
+            // Check that audios can be evenly distributed for requested number of morphs
+            var audioCount = settings.AudioCount;
+            var morphCount = settings.MorphCount;
+            if ((audioCount - 1) % (morphCount - 1) != 0) ErrorManager.ThrowError($"Requested morph count ({morphCount}) does not result in a balanced distribution for the requested number of audios ({audioCount}). To ensure a balanced distribution, MorphCount-1 has to be a divisor of AudioCount-1 (check settings.json).");
+
+            // Generate morph steps by decrementing lang1 percentage and incrementing lang2 percentage
+            List<List<int>> morphSteps = [];
+            var stepSize = 100 / (settings.MorphCount - 1);
+            for (int i = 0; i < settings.MorphCount; i++)
+            {
+                var lang2Percentage = i * stepSize;
+                morphSteps.Add([100 - lang2Percentage, lang2Percentage]);
+            }
+
+            return morphSteps;
+        }
+        /// <summary>
+        /// Updates audiosToMix with a number of audios from each language.
+        /// </summary>
+        /// <param name="audiosToMix">List of audios to mix</param>
+        /// <param name="femaleAudios">List of female audios</param>
+        /// <param name="maleAudios">List of male audios</param>
+        /// <param name="lang2FemaleCount">Lang 2 female audio count</param>
+        /// <param name="lang2MaleCount">Lang 2 male audio count</param>
+        /// <param name="testLangs">List of Langs used for testing</param>
         private static void SelectAudios(List<LangAudio> audiosToMix, List<LangAudio> femaleAudios, List<LangAudio> maleAudios, int lang2FemaleCount, int lang2MaleCount, List<Lang> testLangs)
         {
             var lang1FemaleCount = femaleAudios.Count / 2 - lang2FemaleCount;

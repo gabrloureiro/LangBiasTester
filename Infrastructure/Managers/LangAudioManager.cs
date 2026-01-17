@@ -29,7 +29,8 @@ namespace LangBiasTester.Infrastructure.Managers
                 FileName = fileName,
                 FileLocation = fileLocation,
                 Duration = new AudioFileReader(fileLocation).TotalTime,
-                MixLangs = langMixes
+                MixLangs = langMixes,
+                RawAudios = [.. audiosToMix.Select(audio => audio.FileName)]
             };
 
             return mixedAudio;
@@ -132,7 +133,7 @@ namespace LangBiasTester.Infrastructure.Managers
         {
             foreach (var audio in audios)
             {
-                audio.SnippetDuration = snippetDuration;
+                audio.SnippetDuration = TimeSpan.FromSeconds(snippetDuration);
             }
         }
 
@@ -149,7 +150,7 @@ namespace LangBiasTester.Infrastructure.Managers
                 var duration = audio.Duration.TotalSeconds;
                 var maxStart = duration - snippetDuration;
 
-                audio.SnippetTimestamp = _random.Next(0, (int)maxStart);
+                audio.SnippetTimestamp = TimeSpan.FromSeconds(_random.Next(0, (int)maxStart));
             }
         }
     }

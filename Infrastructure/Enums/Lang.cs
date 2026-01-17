@@ -2,6 +2,7 @@
 {
     public enum Lang
     {
+        NoLang,
         EN,
         FR,
         CN

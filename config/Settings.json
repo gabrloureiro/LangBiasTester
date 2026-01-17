@@ -1,13 +1,14 @@
 {
   "AdminID": 42,
-  "AnonymizeParticipantID": true,
+  "AnonymizeParticipantID": false,
 
   "RunDemo": false,
 
   "RunTraining": false,
   "TrainingTrials": 2,
+
+  "TestConfidence": true,
   "TestReactionTime": false,
-  "TestConfidence": false,
 
   "TimeBetweenTrials": 1,
   "StimulusDuration": 2,
@@ -24,19 +25,27 @@
   "ControlLang": "CN",
 
   "LangKeys": [
-    [ "d", "s", "a" ],
-    [ "j", "k", "l" ]
+    [ "D", "S", "A" ],
+    [ "J", "K", "L" ]
   ],
 
   "ShuffleTextLang": true,
   "ShuffleLangDirection": true,
 
-  "Stimuli": [
+  "AudioCount": 11,
+  "UseExplicitMorphSteps": false,
+  "MorphCount": 11,
+  "MorphSteps": [
     [ 100, 0 ],
+    [ 90, 10 ],
     [ 80, 20 ],
+    [ 70, 30 ],
     [ 60, 40 ],
+    [ 50, 50 ],
     [ 40, 60 ],
+    [ 30, 70 ],
     [ 20, 80 ],
+    [ 10, 90 ],
     [ 0, 100 ]
   ],
 

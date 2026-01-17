@@ -94,7 +94,7 @@
         }
         private void InstructionsTutorial()
         {
-            var stimuli = _form._experiment.Settings.Stimuli;
+            var stimuli = _form._experiment.Settings.MorphSteps;
             string stimuliString = "";
 
             foreach (var stimulus in stimuli)

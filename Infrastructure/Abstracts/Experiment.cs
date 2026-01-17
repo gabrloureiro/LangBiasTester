@@ -9,6 +9,7 @@ namespace LangBiasTester.Infrastructure.Abstracts
     {
         internal Settings Settings;
         internal ParticipantInfo ParticipantInfo;
+        internal Instructions Instructions;
 
         [JsonInclude]
         internal LinkedList<Trial> Trials { get; private set; }

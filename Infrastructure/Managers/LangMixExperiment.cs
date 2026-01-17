@@ -1,38 +1,31 @@
 ﻿using LangBiasTester.Infrastructure.Abstracts;
-using LangBiasTester.Infrastructure.Enums;
+using LangBiasTester.Operators.DataHandlers;
 using LangBiasTester.Infrastructure.Models;
 using LangBiasTester.Operators;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using System.Windows.Forms;
 
 namespace LangBiasTester.Infrastructure.Managers
 {
     internal class LangMixExperiment : Experiment
     {
-        // Experiment properties to be exported
-        internal struct MiniSettings
-        {
-            public List<Lang> Langs { get; set; }
-            public List<List<Keys>> LangKeys { get; set; }
-            public bool ControlIncluded { get; set; }
-            public int[] StimulusSequence { get; set; }
-        }
-
-        [JsonPropertyName("Settings")]
-        internal MiniSettings ExportSettings { get; set; }
-
+        // Experiment properties
         private readonly List<LangAudio> Audios;
-        private int randomizerSeed;
+        private int _randomizerSeed;
 
-        internal LangMixExperiment(Settings settings, ParticipantInfo participantInfo) : base(settings, participantInfo)
-        {
-            Audios = [];
-        }
-        
+        // Experiment settings to be exported
+        [JsonInclude, JsonPropertyName("Settings")]
+        internal ExportSettings? ExportSettings;
+
+        // Constructor
+        internal LangMixExperiment(Settings settings, ParticipantInfo participantInfo) : base(settings, participantInfo) => Audios = [];
+
+        /// <summary>
+        /// Initialize experiment
+        /// </summary>     
         internal override void Init()
         {
-            randomizerSeed = ParticipantInfo.ID;
+            _randomizerSeed = ParticipantInfo.ID;
 
             InitLangs();
 
@@ -47,19 +40,28 @@ namespace LangBiasTester.Infrastructure.Managers
             {
                 StimulusManager.Init(Stimuli, Audios, Settings.StimulusDuration);
             }
+            else if (Settings.UseExplicitMorphSteps)
+            {
+                StimulusManager.Init(Stimuli, Audios, Settings.StimulusDuration, Settings.TestLangs, Settings.MorphSteps);
+            }
             else
             {
-                StimulusManager.Init(Stimuli, Audios, Settings.StimulusDuration, Settings.TestLangs, Settings.Stimuli);
+                // initialize stimuli using morph settings
             }
 
             // Initialize trials
-            TrialManager.Init(Trials, Stimuli, Settings.TrialBlocks, Settings.SequencesPerTrialBlock, randomizerSeed, Settings.UseT1I1Shuffling);
+            TrialManager.Init(Trials, Stimuli, Settings.TrialBlocks, Settings.SequencesPerTrialBlock, _randomizerSeed, Settings.UseT1I1Shuffling);
+
+            Instructions = new LangInstructions(Settings);
         }
+        /// <summary>
+        /// Initialize language settings
+        /// </summary>
         private void InitLangs()
         {
             if (Settings.TestLangs.Count != Settings.LangKeys.Count) ErrorManager.ThrowError("Not enough key assignments to languages. Check settings.json.");
 
-            Random random = new(randomizerSeed);
+            Random random = new(_randomizerSeed);
 
             if (Settings.ShuffleTextLang)
             {
@@ -87,7 +89,7 @@ namespace LangBiasTester.Infrastructure.Managers
 
                 // Compute confidence steps
                 var langKeyCount = Settings.LangKeys[i].Count;
-                float langConfidenceSteps = 1 / langKeyCount;
+                float langConfidenceSteps = 1 / (float)langKeyCount;
 
                 // Iterate through each key in the language's key list
                 for (int j = 0; j < langKeyCount; j++)
@@ -107,7 +109,7 @@ namespace LangBiasTester.Infrastructure.Managers
             {
                 Langs = Settings.TestLangs,
                 ControlIncluded = Settings.IncludeControl,
-                LangKeys = Settings.LangKeys,
+                LangKeys = Settings.LangKeyDictionary,
                 StimulusSequence = [..Trials.Select(trial => trial.StimulusNumber)]
             };
 

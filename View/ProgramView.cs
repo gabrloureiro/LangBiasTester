@@ -1,7 +1,6 @@
 using LangBiasTester.Infrastructure.Managers;
 using LangBiasTester.Infrastructure.Abstracts;
 using LangBiasTester.Operators.DataHandlers;
-using static LangBiasTester.Infrastructure.Enums.Lang;
 using LangBiasTester.View;
 using LangBiasTester.Infrastructure.Enums;
 using LangBiasTester.Infrastructure.Models;
@@ -96,7 +95,7 @@ namespace LangBiasTester
             }
         }
 
-        #region Action Methods
+        #region Intro Methods
         /// <summary>
         /// Initializes and configures the participant ID input control.
         /// </summary>
@@ -132,28 +131,6 @@ namespace LangBiasTester
         /// </remarks>
         internal void RunInstructions()
         {
-            var instructions = new Dictionary<Lang, string>();
-
-            if (_experiment.Settings.TestConfidence)
-            {
-                instructions.Add(EN, "");
-                instructions.Add(FR, "");
-            }
-            else
-            {
-                instructions.Add(
-                    EN, $"You will be presented with a series of sounds. Your task is to indicate whether what you hear is " +
-                        $"English (by pressing {_experiment.Settings.LangKeyDictionary[EN][0]}) or " +
-                        $"French (by pressing {_experiment.Settings.LangKeyDictionary[FR][0]})."
-                    );
-
-                instructions.Add(
-                    FR, $"Vous serez presenté.e avec des différents sons. Votre rôle est d'indiquer si ce que vous entendiez est " +
-                        $"Français (en appuyant {_experiment.Settings.LangKeyDictionary[FR][0]}) ou " +
-                        $"Anglais (en appuyant {_experiment.Settings.LangKeyDictionary[EN][0]})."
-                    );
-            }
-
             FormManager.SetUpControl
                 (
                 this,
@@ -162,14 +139,16 @@ namespace LangBiasTester
                 new Size(1440, 1080),
                 Color.Black,
                 new Font("Arial", 32F, FontStyle.Bold, GraphicsUnit.Point, 0),
-                $"{instructions[_experiment.Settings.TestLangs[0]]}\n\n{instructions[_experiment.Settings.TestLangs[1]]}"
+                _experiment.Instructions.Intro
                 );
 
             _label.TextAlign = ContentAlignment.MiddleCenter;
 
             KeyDown += DismissInstructions;
         }
+        #endregion
 
+        #region Experiment Methods
         /// <summary>
         /// Initializes and starts the experiment by setting up the initial display and running the first trial.
         /// </summary>
@@ -180,22 +159,12 @@ namespace LangBiasTester
         /// </remarks>
         internal void RunExperiment()
         {
-            FormManager.SetUpControl
-                (
-                this,
-                _label,
-                "FixationCross",
-                new Size(1440, 1080),
-                Color.Black,
-                new Font("Arial", 48F, FontStyle.Regular, GraphicsUnit.Point),
-                "+"
-                );
-
             _currentTrial = _experiment.Trials.First;
             _currentTrialBlock = 0;
 
             RunTrial(_currentTrial);
         }
+
         /// <summary>
         /// Performs cleanup and finalization tasks at the end of the experiment, including displaying a completion
         /// message, exporting experiment data, and preparing the application to exit.
@@ -207,14 +176,10 @@ namespace LangBiasTester
         /// </remarks>
         internal void EndExperiment()
         {
-            FormManager.GenericLabel //TODO change message -- add french and display according to lang1 lang2 order
+            FormManager.GenericLabel
                 (
                 _label,
-                """
-                The experiment is over. Thank you for your participation.
-                
-                Press any key to exit.
-                """
+                _experiment.Instructions.Exit
                 );
 
             _experiment.ExportData();
@@ -277,14 +242,15 @@ namespace LangBiasTester
         }
         private void TimeUp(object? sender, EventArgs? e)
         {
-            ResetTrial();
-
-            // If reaction time is not being tested, subscribe to keydown event to catch response after the trial ends.
+            // If reaction time is not being tested, collect response after the trial ends.
+            // Does not currently have a logic to record the response time (if enabled)
             if (!_experiment.Settings.TestReactionTime)
             {
-                KeyDown += CatchResponse;
+                CollectResponse();
                 return;
             }
+
+            ResetTrial();
 
             // If time is up and reaction time is being tested, register no response.
             _currentTrial.Value.Response = null;
@@ -296,7 +262,6 @@ namespace LangBiasTester
         private void CatchResponse(object? sender, KeyEventArgs? e)
         {
             if (e == null) return;
-            // Does not currently have a logic to record the response time (if enabled)
             e.SuppressKeyPress = true;
 
             var response = e.KeyCode;
@@ -307,7 +272,14 @@ namespace LangBiasTester
             if (!validResponse) return;
             
             ResetTrial();
-            TrialManager.RegisterResponse(_currentTrial.Value, response);
+
+            // First Lang whose list of Keys contains the given response
+            var responseLang = _experiment.Settings.LangKeyDictionary.Where(entry => entry.Value.Contains(response)).First().Key;
+
+            // Confidence rating which corresponds to given response
+            var responseConfidence = _experiment.Settings.TestConfidence ? _experiment.Settings.ConfidenceRatings[response] : 0;
+
+            TrialManager.RegisterResponse(_currentTrial.Value, response, responseConfidence, responseLang);
 
             Thread.Sleep(_experiment.Settings.TimeBetweenTrials * 1000);
 
@@ -359,6 +331,17 @@ namespace LangBiasTester
         /// with associated audio snippets.</param>
         private void RunTrial(LinkedListNode<Trial>? currentTrial)
         {
+            FormManager.SetUpControl
+                (
+                this,
+                _label,
+                "FixationCross",
+                new Size(1440, 1080),
+                Color.Black,
+                new Font("Arial", 48F, FontStyle.Regular, GraphicsUnit.Point),
+                "+"
+                );
+
             TrialManager.RunTrial(currentTrial.Value);
             if (_experiment.Settings.TestReactionTime) KeyDown += CatchResponse;
             TimerStart();
@@ -379,14 +362,24 @@ namespace LangBiasTester
             {
                 FormManager.GenericLabel
                     (
-                    _label,
-                    """
-                    Press any key to continue.
-                    """
+                        _label,
+                        _experiment.Instructions.BlockEnd
                     );
                 KeyDown += StartNewTrialBlock;
             }
             else RunTrial(_currentTrial);
+        }
+
+        private void CollectResponse()
+        {
+            List<Label> confidenceRatings = [];
+
+            FormManager.GenericLabel
+                (
+                    _label,
+                    _experiment.Instructions.Response
+                );
+            KeyDown += CatchResponse;
         }
         #endregion
 

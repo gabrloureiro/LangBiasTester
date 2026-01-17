@@ -39,7 +39,12 @@ namespace LangBiasTester.Operators
         public bool ShuffleLangDirection { get; set; }
 
 
-        public List<List<int>>? Stimuli { get; set; }
+        public int AudioCount { get; set; }
+        public bool UseExplicitMorphSteps { get; set; }
+        public int MorphCount { get; set; }
+        public List<List<int>>? MorphSteps { get; set; }
+
+
         public string? RawAudioFilePath { get; set; }
         public bool UseStaticMixes { get; set; }
         public string? MixedAudioFilePath { get; set; }
