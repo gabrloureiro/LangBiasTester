@@ -5,6 +5,7 @@ namespace LangBiasTester.Operators.DataHandlers
 {
     internal struct ExportSettings
     {
+        [JsonConverter(typeof(InlineCollectionConverterFactory))]
         public List<Lang> Langs { get; set; }
 
 

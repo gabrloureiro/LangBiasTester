@@ -58,6 +58,30 @@ namespace LangBiasTester.Infrastructure.Models
             Intro = $"{instructions[TestLangs[0]]}\n\n{instructions[TestLangs[1]]}";
         }
 
+        private void SetTrainingInstructions()
+        {
+            //TODO change message
+            var instructions = new Dictionary<Lang, string>()
+            {
+                { EN, "These are stimuli you will hear" },
+                { FR, "" }
+            };
+
+            Training = $"{instructions[TestLangs[0]]}\n\n{instructions[TestLangs[1]]}";
+        }
+
+        private void SetTrainingEndInstructions()
+        {
+            //TODO change message
+            var instructions = new Dictionary<Lang, string>()
+            {
+                { EN, "Repeat?" },
+                { FR, "" }
+            };
+
+            TrainingEnd = $"{instructions[TestLangs[0]]}\n\n{instructions[TestLangs[1]]}";
+        }
+
         private void SetResponseInstructions()
         {
             //TODO add 6 blocks of text, one for each confidence rating
@@ -89,13 +113,7 @@ namespace LangBiasTester.Infrastructure.Models
         {
             var instructions = new Dictionary<Lang, string>()
             {
-                { EN,
-                    """
-                    The experiment is over. Thank you for your participation.
-            
-                    Press any key to exit.
-                    """ 
-                },
+                { EN, "The experiment is over. Thank you for your participation." },
                 { FR, "" }
             };
 

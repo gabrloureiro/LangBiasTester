@@ -13,7 +13,9 @@ namespace LangBiasTester.Operators
 
 
         public bool RunTraining { get; set; }
-        public int TrainingTrials { get; set; }
+        public Keys? RepeatTrainingKey { get; set; }
+
+
         public bool TestReactionTime { get; set; }
         public bool TestConfidence { get; set; }
 

@@ -27,7 +27,11 @@ namespace LangBiasTester.Operators.DataHandlers
             public override void Write(Utf8JsonWriter writer, T value, JsonSerializerOptions options)
             {
                 // 1. Serialize to a compact string
-                var compactOptions = new JsonSerializerOptions { WriteIndented = false };
+                var compactOptions = new JsonSerializerOptions()
+                {
+                    Converters = { new JsonStringEnumConverter() },
+                    WriteIndented = false
+                };
                 string json = JsonSerializer.Serialize(value, compactOptions);
 
                 // 2. Add spaces after commas for readability

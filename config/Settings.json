@@ -5,7 +5,7 @@
   "RunDemo": false,
 
   "RunTraining": false,
-  "TrainingTrials": 2,
+  "RepeatTrainingKey": "Space",
 
   "TestConfidence": true,
   "TestReactionTime": false,

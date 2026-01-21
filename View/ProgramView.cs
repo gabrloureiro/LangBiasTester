@@ -124,7 +124,7 @@ namespace LangBiasTester
         }
 
         /// <summary>
-        /// Presents the participants with instructions. Order and direction of languages are randomized.
+        /// Presents the participants with instructions.
         /// </summary>
         /// <remarks>
         /// Also subscribes the dismiss instructions event.
@@ -145,6 +145,37 @@ namespace LangBiasTester
             _label.TextAlign = ContentAlignment.MiddleCenter;
 
             KeyDown += DismissInstructions;
+        }
+
+        internal void RunTraining()
+        {
+            FormManager.SetUpControl
+                (
+                this,
+                _label,
+                "TrainingInstructions",
+                new Size(1440, 1080),
+                Color.Black,
+                new Font("Arial", 32F, FontStyle.Bold, GraphicsUnit.Point, 0),
+                _experiment.Instructions.Training
+                );
+
+            StimulusManager.RunMultipleStimuli(_experiment.Stimuli, _experiment.Settings.StimulusDuration, _experiment.Settings.TimeBetweenTrials);
+
+            FormManager.SetUpControl
+                (
+                this,
+                _label,
+                "TrainingInstructions",
+                new Size(1440, 1080),
+                Color.Black,
+                new Font("Arial", 32F, FontStyle.Bold, GraphicsUnit.Point, 0),
+                _experiment.Instructions.TrainingEnd
+                );
+
+
+
+            ProgramControl();
         }
         #endregion
 
@@ -233,12 +264,27 @@ namespace LangBiasTester
         }
         private void DismissInstructions(object? sender, KeyEventArgs? e)
         {
-            if (e != null) e.SuppressKeyPress = true;
+            if (e == null) return
+            
+            e.SuppressKeyPress = true;
             KeyDown -= DismissInstructions;
 
             Controls.Remove(_label);
 
-            ProgramControl();
+            if (_experiment.Settings.RunTraining) RunTraining();
+            else ProgramControl();
+        }
+        private void DismissTraining(object? sender, KeyEventArgs? e)
+        {
+            if (e == null) return;
+                
+            e.SuppressKeyPress = true;
+            KeyDown -= DismissInstructions;
+
+            Controls.Remove(_label);
+
+            if (e.KeyCode == _experiment.Settings.RepeatTrainingKey) RunTraining();
+            else ProgramControl();
         }
         private void TimeUp(object? sender, EventArgs? e)
         {
