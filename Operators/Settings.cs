@@ -1,5 +1,4 @@
-﻿using LangBiasTester.Infrastructure.Abstracts;
-using LangBiasTester.Infrastructure.Enums;
+﻿using LangBiasTester.Infrastructure.Enums;
 using System.Text.Json.Serialization;
 
 namespace LangBiasTester.Operators
@@ -28,40 +27,12 @@ namespace LangBiasTester.Operators
         public int TrialBlocks { get; set; }
         public int SequencesPerTrialBlock { get; set; }
 
-
-        public List<Lang>? TestLangs { get; set; }
         public bool IncludeControl { get; set; }
-        public Lang ControlLang { get; set; }
-
-
-        public List<List<Keys>>? LangKeys { get; set; }
-
-
-        public bool ShuffleTextLang { get; set; }
-        public bool ShuffleLangDirection { get; set; }
-
-
-        public int AudioCount { get; set; }
-        public bool UseExplicitMorphSteps { get; set; }
-        public int MorphCount { get; set; }
-        public List<List<int>>? MorphSteps { get; set; }
-
-
-        public string? RawAudioFilePath { get; set; }
-        public bool UseStaticMixes { get; set; }
-        public string? MixedAudioFilePath { get; set; }
-
-
-        public Dictionary<Lang, string>? Instructions { get; set; }
-
-
-        [JsonIgnore]
-        internal Dictionary<Lang, List<Keys>>? LangKeyDictionary { get; set; }
-
+        
         [JsonIgnore]
         internal Dictionary<Keys, float>? ConfidenceRatings { get; set; }
 
         [JsonIgnore]
         internal List<Keys>? ValidKeys { get; set; }
-        }
+    }
 }

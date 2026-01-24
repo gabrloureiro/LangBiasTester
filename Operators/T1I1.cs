@@ -19,9 +19,9 @@ namespace LangBiasTester.Operators
 
             RawSequences = LoadSequences();
 
-            var randomizedStimuluss = Enumerable.Range(1, stimulusCount).ToArray();
-            Rnd.Shuffle(randomizedStimuluss);
-            Stimuli = [.. randomizedStimuluss];
+            var randomizedStimulus = Enumerable.Range(1, stimulusCount).ToArray();
+            Rnd.Shuffle(randomizedStimulus);
+            Stimuli = [.. randomizedStimulus];
 
             Sequence = GetRawSequence(StimulusCount);
         }
@@ -47,9 +47,9 @@ namespace LangBiasTester.Operators
             }
         }
 
-        public List<int> GenerateSequence()
+        public List<int>? GenerateSequence(int elementToMaintain = -1)
         {
-            RemapSequence();
+            RemapSequence(elementToMaintain);
             
             //TODO: add logic to further shuffle the sequence
 
@@ -61,16 +61,37 @@ namespace LangBiasTester.Operators
             }
         }
 
-        private void RemapSequence()
+        private void RemapSequence(int elementToMaintain = -1)
         {
-            var elementPositions = GetPositionsOfElements();
+            // Map elements from original sequence (keys) to new values (values)
+            var mappings = new Dictionary<int, int>();
 
-            Dictionary<int, int> mappings = [];
+            // If an element is to be maintained, map it to itself
+            if (elementToMaintain != -1) mappings.Add(elementToMaintain, elementToMaintain);
+
+            var tempKey = 0;
+            var tempValue = 0;
 
             for (int i = 0; i < StimulusCount; i++)
             {
-                mappings[i + 1] = Stimuli[i];
+                // Since sequence is 1-indexed, map element
+                var element = i + 1;
+
+                // Do not map element
+                if (element == elementToMaintain)
+                {
+                    tempValue = Stimuli[i];
+                }
+                else if (Stimuli[i] == elementToMaintain)
+                {
+                    tempKey = element;
+                }
+                else mappings[element] = Stimuli[i];
             }
+            
+            if (tempKey != 0 && tempValue != 0) mappings.Add(tempKey, tempValue);
+
+            var elementPositions = GetPositionsOfElements();
 
             foreach (var element in elementPositions)
             {

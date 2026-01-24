@@ -1,8 +1,6 @@
 using LangBiasTester.Infrastructure.Managers;
 using LangBiasTester.Infrastructure.Abstracts;
-using LangBiasTester.Operators.DataHandlers;
 using LangBiasTester.View;
-using LangBiasTester.Infrastructure.Enums;
 using LangBiasTester.Infrastructure.Models;
 
 namespace LangBiasTester
@@ -10,15 +8,11 @@ namespace LangBiasTester
     public partial class ProgramView : Form
     {
         #region Properties
-        internal readonly Experiment _experiment;
-
-        internal readonly Util _util;
+        internal readonly IExperiment _experiment;
 
         private readonly TextBox _participantIDBox;
         internal readonly Label _label;
-
-        private readonly SettingsForm _settingsMenu;
-        private readonly DemoRunner _demo;
+        private readonly Label _fixationCross;
 
         private readonly System.Windows.Forms.Timer _timer;
 
@@ -26,34 +20,97 @@ namespace LangBiasTester
         private int _currentTrialBlock;
 
         private int _programStage;
+        private readonly List<Action> _programStages;
         #endregion
 
+        #region Form Methods
         /// <summary>
-        /// Initializes a new instance of the ProgramView class with the specified experiment and utility objects.
+        /// Initializes a new instance of the ProgramView class with the specified experiment and utility objects. Sets up and links all controls and labels.
         /// </summary>
         /// <param name="experiment">The Experiment instance that contains all information about trials, stimuli, and settings. Cannot be null.</param>
         /// <param name="util">The Util instance that supplies utility functions or services required by the view. Cannot be null.</param>
-        internal ProgramView(Experiment experiment, Util util)
+        internal ProgramView(IExperiment experiment)
         {
             InitializeComponent();
 
             _experiment = experiment;
-            _util = util;
-            _programStage = 0;
+            _programStage = -1;
 
-            _participantIDBox = new();
-            _label = new();
-            _settingsMenu = new(_experiment.Settings, _util);
-            _demo = new(this);
+            _participantIDBox = new()
+            {
+                Size = new Size(400, 60)
+            };
 
             _timer = new();
+
+            _label = new();
+            _fixationCross = new()
+            {
+                Text = "+",
+                TextAlign = ContentAlignment.MiddleCenter
+            };
+
+            _programStages =
+                [
+                    GetParticipantID,
+                    RunInstructions,
+                    TrainingInstructions,
+                    RunExperiment,
+                    EndExperiment,
+                    Application.Exit
+                ];
         }
         private void Form1_Load(object sender, EventArgs e)
         {
             ActiveControl = null;
             KeyPreview = true;
+            SetUpControls();
             ProgramControl();
         }
+
+        private void SetUpControls()
+        {
+            FormManager.LinkControls(this, [_participantIDBox, _label, _fixationCross]);
+
+            FormManager.SetUpControl
+                (
+                _participantIDBox,
+                "ParticipantIDBox",
+                Color.DimGray,
+                new Font("Arial", 16F, FontStyle.Regular, GraphicsUnit.Point)
+                );
+
+            FormManager.SetUpControl
+                (
+                _fixationCross,
+                "FixationCross",
+                Color.Black,
+                new Font("Arial", 48F, FontStyle.Regular, GraphicsUnit.Point),
+                new Size(1440, 1080)
+                );
+
+            _label.Hide();
+            _participantIDBox.Hide();
+            _fixationCross.Hide();
+        }
+
+        private void SetUpInstructions()
+        {
+            // Set up all controls
+            FormManager.LinkControls(this, [_experiment.Instructions.Intro, _experiment.Instructions.Training, _experiment.Instructions.TrainingEnd, _experiment.Instructions.Response, _experiment.Instructions.BlockEnd, _experiment.Instructions.Exit]);
+            SuspendLayout();
+
+            FormManager.SetUpControl(_experiment.Instructions.Intro, "Instructions");
+            FormManager.SetUpControl(_experiment.Instructions.Training, "TrainingInstructions");
+            FormManager.SetUpControl(_experiment.Instructions.TrainingEnd, "TrainingInstructions");
+            FormManager.SetUpControl(_experiment.Instructions.Response, "ResponseInstructions");
+            FormManager.SetUpControl(_experiment.Instructions.Exit, "ExitInstructions");
+            FormManager.SetUpControl(_experiment.Instructions.BlockEnd, "BlockEndInstructions");
+
+            _experiment.Instructions.HideAll();
+        }
+
+        #endregion
 
         /// <summary>
         /// Advances the program to the next stage in the experiment workflow, executing the appropriate actions for the
@@ -62,37 +119,12 @@ namespace LangBiasTester
         /// <remarks>
         /// This method manages the experiment's progression by incrementing the internal stage
         /// counter and invoking stage-specific logic, such as running tutorials, collecting participant information, or
-        /// ending the experiment. The actions performed depend on the current stage and whether the experiment is
-        /// running in demo mode.
+        /// ending the experiment. The actions performed depend on the current stage.
         /// </remarks>
         internal void ProgramControl()
         {
             _programStage++;
-            var runningDemoMode = _experiment.Settings.RunDemo;
-
-            if (runningDemoMode)
-            {
-                _demo.DemoControl(_programStage);
-                return;
-            }
-
-            switch (_programStage)
-            {
-                case 1: GetParticipantID();
-                    break;
-
-                case 2: RunInstructions();
-                    break;
-
-                case 3: RunExperiment();
-                    break;
-
-                case 4: EndExperiment();
-                    break;
-
-                case 5: Application.Exit();
-                    break;
-            }
+            _programStages[_programStage]();
         }
 
         #region Intro Methods
@@ -106,16 +138,7 @@ namespace LangBiasTester
         /// </remarks>
         internal void GetParticipantID()
         {
-            FormManager.SetUpControl
-                (
-                this,
-                _participantIDBox,
-                "ParticipantIDBox",
-                new Size(400, 60),
-                Color.DimGray,
-                new Font("Arial", 16F, FontStyle.Regular, GraphicsUnit.Point),
-                ""
-                );
+            _participantIDBox.Show();
 
             _participantIDBox.PlaceholderText = "Participant ID";
             _participantIDBox.BorderStyle = BorderStyle.None;
@@ -131,51 +154,20 @@ namespace LangBiasTester
         /// </remarks>
         internal void RunInstructions()
         {
-            FormManager.SetUpControl
-                (
-                this,
-                _label,
-                "Instructions",
-                new Size(1440, 1080),
-                Color.Black,
-                new Font("Arial", 32F, FontStyle.Bold, GraphicsUnit.Point, 0),
-                _experiment.Instructions.Intro
-                );
-
-            _label.TextAlign = ContentAlignment.MiddleCenter;
-
+            _experiment.Instructions.Intro.Show();
             KeyDown += DismissInstructions;
         }
-
-        internal void RunTraining()
+        internal void TrainingInstructions()
         {
-            FormManager.SetUpControl
-                (
-                this,
-                _label,
-                "TrainingInstructions",
-                new Size(1440, 1080),
-                Color.Black,
-                new Font("Arial", 32F, FontStyle.Bold, GraphicsUnit.Point, 0),
-                _experiment.Instructions.Training
-                );
+            if (!_experiment.Settings.RunTraining)
+            {
+                ProgramControl();
+                return;
+            }
+            _experiment.Instructions.Training.Show();
 
-            StimulusManager.RunMultipleStimuli(_experiment.Stimuli, _experiment.Settings.StimulusDuration, _experiment.Settings.TimeBetweenTrials);
-
-            FormManager.SetUpControl
-                (
-                this,
-                _label,
-                "TrainingInstructions",
-                new Size(1440, 1080),
-                Color.Black,
-                new Font("Arial", 32F, FontStyle.Bold, GraphicsUnit.Point, 0),
-                _experiment.Instructions.TrainingEnd
-                );
-
-
-
-            ProgramControl();
+            _timer.Tick += RunTraining;
+            TimerStart(10);
         }
         #endregion
 
@@ -207,11 +199,7 @@ namespace LangBiasTester
         /// </remarks>
         internal void EndExperiment()
         {
-            FormManager.GenericLabel
-                (
-                _label,
-                _experiment.Instructions.Exit
-                );
+            _experiment.Instructions.Exit.Show();
 
             _experiment.ExportData();
 
@@ -229,6 +217,7 @@ namespace LangBiasTester
                 if (keepData == DialogResult.Yes)
                 {
                     KeyDown -= CatchResponse;
+                    _experiment.Instructions.Response.Hide();
                     EndExperiment();
                 }
                 else if (keepData == DialogResult.Cancel) return;
@@ -246,7 +235,7 @@ namespace LangBiasTester
             
             if (participantID == _experiment.Settings.AdminID)
             {
-                _settingsMenu.Run();
+                _experiment.SettingsUI.Run();
                 return;
             }
 
@@ -255,36 +244,51 @@ namespace LangBiasTester
             e.SuppressKeyPress = true;
             _participantIDBox.KeyDown -= RegisterIDBoxInput;
 
-            Controls.Remove(_participantIDBox);
-            Controls.Remove(_label);
+            _participantIDBox.Hide();
 
             _experiment.Init();
+
+            SetUpInstructions();
 
             ProgramControl();
         }
         private void DismissInstructions(object? sender, KeyEventArgs? e)
         {
-            if (e == null) return
+            if (e == null) return;
             
             e.SuppressKeyPress = true;
             KeyDown -= DismissInstructions;
 
-            Controls.Remove(_label);
+            _experiment.Instructions.Intro.Hide();
 
-            if (_experiment.Settings.RunTraining) RunTraining();
-            else ProgramControl();
+            ProgramControl();
+        }
+        internal void RunTraining(object? sender, EventArgs? e)
+        {
+            _timer.Tick -= RunTraining;
+            TimerStop();
+
+            StimulusManager.RunMultipleStimuli(_experiment.Stimuli, _experiment.Settings.StimulusDuration, _experiment.Settings.TimeBetweenTrials);
+            _experiment.Instructions.Training.Hide();
+            _experiment.Instructions.TrainingEnd.Show();
+
+            KeyDown += DismissTraining;
         }
         private void DismissTraining(object? sender, KeyEventArgs? e)
         {
             if (e == null) return;
                 
             e.SuppressKeyPress = true;
-            KeyDown -= DismissInstructions;
+            KeyDown -= DismissTraining;
 
-            Controls.Remove(_label);
+            _experiment.Instructions.TrainingEnd.Hide();
 
-            if (e.KeyCode == _experiment.Settings.RepeatTrainingKey) RunTraining();
-            else ProgramControl();
+            if (e.KeyCode == _experiment.Settings.RepeatTrainingKey) TrainingInstructions();
+            else
+            {
+                StimulusManager.DisposeOfMultipleStimuli(_experiment.Stimuli);
+                ProgramControl();
+            }
         }
         private void TimeUp(object? sender, EventArgs? e)
         {
@@ -317,16 +321,16 @@ namespace LangBiasTester
             
             var validResponse = _experiment.Settings.ValidKeys.Contains(response);
             if (!validResponse) return;
-            
-            ResetTrial();
 
-            // First Lang whose list of Keys contains the given response
-            var responseLang = _experiment.Settings.LangKeyDictionary.Where(entry => entry.Value.Contains(response)).First().Key;
+            _experiment.Instructions.Response.Hide();
+            ResetTrial();
 
             // Confidence rating which corresponds to given response
             var responseConfidence = _experiment.Settings.TestConfidence ? _experiment.Settings.ConfidenceRatings[response] : 0;
 
-            TrialManager.RegisterResponse(_currentTrial.Value, response, responseConfidence, responseLang);
+            // TODO: FIX (MESSY)
+            TrialManager.RegisterResponse(_currentTrial.Value, response, responseConfidence);
+            _experiment.SetTrialResponse(_currentTrial.Value);
 
             Thread.Sleep(_experiment.Settings.TimeBetweenTrials * 1000);
 
@@ -337,7 +341,7 @@ namespace LangBiasTester
             if (e != null) e.SuppressKeyPress = true;
             KeyDown -= StartNewTrialBlock;
 
-            Controls.Remove(_label);
+            _experiment.Instructions.BlockEnd.Hide();
 
             _currentTrialBlock++;
 
@@ -356,6 +360,7 @@ namespace LangBiasTester
         {
             TimerStop();
             TrialManager.EndTrial(_currentTrial.Value);
+            _fixationCross.Hide();
         }
         /// <summary>
         /// Resets the trial state by stopping timers and detaching event handlers.
@@ -381,20 +386,10 @@ namespace LangBiasTester
         /// with associated audio snippets.</param>
         private void RunTrial(LinkedListNode<Trial>? currentTrial)
         {
-            FormManager.SetUpControl
-                (
-                this,
-                _label,
-                "FixationCross",
-                new Size(1440, 1080),
-                Color.Black,
-                new Font("Arial", 48F, FontStyle.Regular, GraphicsUnit.Point),
-                "+"
-                );
-
+            _fixationCross.Show();
             TrialManager.RunTrial(currentTrial.Value);
             if (_experiment.Settings.TestReactionTime) KeyDown += CatchResponse;
-            TimerStart();
+            ResponseTimer(_experiment.Settings.StimulusDuration * 1000);
         }
         /// <summary>
         /// Advances to the next trial in the sequence, starting a new round if necessary.
@@ -407,14 +402,11 @@ namespace LangBiasTester
         {
             _currentTrial = _currentTrial.Next;
 
+            // TODO: figure out where to place breaks (between blocks, sequences, etc)
             if (_currentTrial == null) ProgramControl();
             else if (_currentTrial.Value.Block != _currentTrialBlock)
             {
-                FormManager.GenericLabel
-                    (
-                        _label,
-                        _experiment.Instructions.BlockEnd
-                    );
+                _experiment.Instructions.BlockEnd.Show();
                 KeyDown += StartNewTrialBlock;
             }
             else RunTrial(_currentTrial);
@@ -424,21 +416,22 @@ namespace LangBiasTester
         {
             StopTrial();
 
-            FormManager.GenericLabel
-                (
-                    _label,
-                    _experiment.Instructions.Response
-                );
+            _experiment.Instructions.Response.Show();
+
             KeyDown += CatchResponse;
         }
         #endregion
 
         #region Timer Methods
-        private void TimerStart()
+        private void ResponseTimer(int interval)
+        {
+            _timer.Tick += TimeUp;
+            TimerStart(interval);
+        }
+        private void TimerStart(int interval)
         {
             _timer.Enabled = true;
-            _timer.Tick += TimeUp;
-            _timer.Interval = _experiment.Settings.StimulusDuration * 1000;
+            _timer.Interval = interval;
             _timer.Start();
         }
         private void TimerStop()

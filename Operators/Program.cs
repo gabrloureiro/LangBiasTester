@@ -12,12 +12,12 @@ namespace LangBiasTester.Operators
             ApplicationConfiguration.Initialize();
 
             Util util = new();
-            Settings settings = util.ExtractSettings();
+            LangSettings settings = util.ExtractSettings();
             util.ExtractRawAudioMetadata(settings, false);
 
-            LangMixExperiment experiment = new(settings, new ParticipantInfo());
+            LangMixExperiment experiment = new(settings, new ParticipantInfo(), util);
 
-            ProgramView form = new (experiment, util);
+            ProgramView form = new (experiment);
 
             Application.Run(form);
         }

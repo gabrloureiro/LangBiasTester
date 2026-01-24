@@ -1,6 +1,5 @@
 ﻿using LangBiasTester.Infrastructure.Enums;
 using LangBiasTester.Infrastructure.Managers;
-using LangBiasTester.Infrastructure.Abstracts;
 using LangBiasTester.Infrastructure.Models;
 using NAudio.Wave;
 using System.Text.Json;
@@ -21,16 +20,16 @@ namespace LangBiasTester.Operators.DataHandlers
         /// Extracts and deserializes application settings from a JSON file.
         /// </summary>
         /// <remarks>
-        /// This method reads the contents of a JSON file and deserializes it into a <see cref="Settings"/> object.
-        /// The file must exist and contain valid JSON that matches the structure of the <see cref="Settings"/> class.
+        /// This method reads the contents of a JSON file and deserializes it into a <see cref="LangSettings"/> object.
+        /// The file must exist and contain valid JSON that matches the structure of the <see cref="LangSettings"/> class.
         /// </remarks>
-        /// <returns>A <see cref="Settings"/> object populated with the deserialized data from the JSON file.</returns>
-        /// <exception cref="Exception">Thrown if the deserialization process results in a null <see cref="Settings"/> object.</exception>
-        internal Settings ExtractSettings()
+        /// <returns>A <see cref="LangSettings"/> object populated with the deserialized data from the JSON file.</returns>
+        /// <exception cref="Exception">Thrown if the deserialization process results in a null <see cref="LangSettings"/> object.</exception>
+        internal LangSettings ExtractSettings() // TODO: CHANGE SO THAT CAN DESERIALIZE TO ANY TYPE OF SETTINGS
         {
             var jsonString = File.ReadAllText("config/Settings.json");
 
-            var settings = JsonSerializer.Deserialize<Settings>(jsonString, _options);
+            var settings = JsonSerializer.Deserialize<LangSettings>(jsonString, _options);
 
             if (settings == null) ErrorManager.ThrowError("Could not configure experiment. Check that settings.json exists.");
 
@@ -54,7 +53,7 @@ namespace LangBiasTester.Operators.DataHandlers
         /// <param name="settings">The settings object containing the path to the directory where audio files are stored.</param>
         /// <exception cref="Exception">Thrown if the directory structure does not follow the expected folder naming conventions for language or
         /// voice gender.</exception>
-        internal void ExtractRawAudioMetadata(Settings settings, bool overrideExisting)
+        internal void ExtractRawAudioMetadata(LangSettings settings, bool overrideExisting)
         {
             var audioDirectory = (new DirectoryInfo(settings.RawAudioFilePath)).Parent;
 
@@ -134,7 +133,7 @@ namespace LangBiasTester.Operators.DataHandlers
         /// 
         /// <param name="settings">The configuration settings that specify the audio file path and test languages.</param>
         /// <exception cref="Exception">Thrown if the audio data cannot be deserialized from the specified file or if the file does not exist.</exception>
-        internal void CreateStaticAudioMixes(Settings settings)
+        internal void CreateStaticAudioMixes(LangSettings settings)
         {
             List<LangAudio> mixedAudios = [];
 
@@ -224,7 +223,7 @@ namespace LangBiasTester.Operators.DataHandlers
 
             progressText.AppendText("MixedAudioMetadata.json written.");
         }
-        private static List<List<int>> GetMorphSteps(Settings settings)
+        private static List<List<int>> GetMorphSteps(LangSettings settings)
         {
             if (settings.UseExplicitMorphSteps) return settings.MorphSteps;
 

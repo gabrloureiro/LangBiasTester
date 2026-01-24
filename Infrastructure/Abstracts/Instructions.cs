@@ -1,12 +1,32 @@
 ﻿namespace LangBiasTester.Infrastructure.Abstracts
 {
-    internal class Instructions
+    internal abstract class Instructions
     {
-        internal string? Intro;
-        internal string? Training;
-        internal string? TrainingEnd;
-        internal string? Response;
-        internal string? BlockEnd;
-        internal string? Exit;
+        internal Control Intro;
+        internal Control Training;
+        internal Control TrainingEnd;
+        internal Control Response;
+        internal Control BlockEnd;
+        internal Control Exit;
+
+        internal Instructions()
+        {
+            Intro = new();
+            Training = new();
+            TrainingEnd = new();
+            Response = new();
+            BlockEnd = new();
+            Exit = new();
+        }
+        internal abstract void Init();
+        internal void HideAll()
+        {
+            Intro.Hide();
+            Training.Hide();
+            TrainingEnd.Hide();
+            Response.Hide();
+            BlockEnd.Hide();
+            Exit.Hide();
+        }
     }
 }

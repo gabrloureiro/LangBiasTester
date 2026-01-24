@@ -7,23 +7,30 @@ using System.Text.Json.Serialization;
 
 namespace LangBiasTester.Infrastructure.Managers
 {
-    internal class LangMixExperiment : Experiment
+    internal class LangMixExperiment : Experiment<LangInstructions, LangSettings>
     {
         // Experiment properties
         private readonly List<LangAudio> Audios;
         private int _randomizerSeed;
+        internal readonly Util _util;
 
         // Experiment settings to be exported
-        [JsonInclude, JsonPropertyName("Settings")]
+        [JsonInclude, JsonPropertyName("ExperimentSettings")]
         internal ExportSettings? ExportSettings;
 
         // Constructor
-        internal LangMixExperiment(Settings settings, ParticipantInfo participantInfo) : base(settings, participantInfo) => Audios = [];
+        internal LangMixExperiment(LangSettings settings, ParticipantInfo participantInfo, Util util) : base(settings, participantInfo)
+        {
+            _util = util;
+            SettingsUI = new(settings, util);
+            Audios = [];
+            Instructions = new LangInstructions(Settings);
+        }
 
         /// <summary>
         /// Initialize experiment
-        /// </summary>     
-        internal override void Init()
+        /// </summary>
+        public override void Init()
         {
             _randomizerSeed = ParticipantInfo.ID;
 
@@ -50,9 +57,9 @@ namespace LangBiasTester.Infrastructure.Managers
             }
 
             // Initialize trials
-            TrialManager.Init(Trials, Stimuli, Settings.TrialBlocks, Settings.SequencesPerTrialBlock, _randomizerSeed, Settings.UseT1I1Shuffling);
+            TrialManager.Init(Trials, Stimuli, Settings.TrialBlocks, Settings.SequencesPerTrialBlock, _randomizerSeed);
 
-            Instructions = new LangInstructions(Settings);
+            Instructions.Init();
         }
         /// <summary>
         /// Initialize language settings
@@ -103,7 +110,16 @@ namespace LangBiasTester.Infrastructure.Managers
             }
         }
 
-        internal override void ExportData()
+        public override void SetTrialResponse(Trial trial)
+        {
+            if (trial.Response != null)
+            {
+                var response = (Keys)trial.Response;
+                trial.ResponseLang = Settings.LangKeyDictionary.Where(entry => entry.Value.Contains(response)).First().Key;
+            }
+        }
+
+        public override void ExportData()
         {
             ExportSettings = new()
             {

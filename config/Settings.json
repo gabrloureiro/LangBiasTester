@@ -4,8 +4,8 @@
 
   "RunDemo": false,
 
-  "RunTraining": false,
-  "RepeatTrainingKey": "Space",
+  "RunTraining": true,
+  "RepeatTrainingKey": "G",
 
   "TestConfidence": true,
   "TestReactionTime": false,

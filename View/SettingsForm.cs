@@ -9,10 +9,10 @@ namespace LangBiasTester.View
         private readonly Button _createStaticMixButton;
         private readonly GroupBox _utilButtons;
 
-        private readonly Settings _settings;
+        private readonly LangSettings _settings;
         private readonly Util _util;
 
-        internal SettingsForm(Settings settings, Util util)
+        internal SettingsForm(LangSettings settings, Util util)
         {
             _settings = settings;
             _util = util;

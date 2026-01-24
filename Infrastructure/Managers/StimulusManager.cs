@@ -1,5 +1,4 @@
-﻿using LangBiasTester.Infrastructure.Abstracts;
-using LangBiasTester.Infrastructure.Enums;
+﻿using LangBiasTester.Infrastructure.Enums;
 using LangBiasTester.Infrastructure.Models;
 using LangBiasTester.Operators;
 using NAudio.Wave;
@@ -50,6 +49,13 @@ namespace LangBiasTester.Infrastructure.Managers
             foreach (KeyValuePair<OffsetSampleProvider, WaveOut> stream in stimulus.WaveStreams)
             {
                 stream.Value.Stop();
+            }
+        }
+
+        internal static void DisposeOfStimulus(Stimulus stimulus)
+        {
+            foreach (KeyValuePair<OffsetSampleProvider, WaveOut> stream in stimulus.WaveStreams)
+            {
                 stream.Value.Dispose();
             }
         }
@@ -65,6 +71,14 @@ namespace LangBiasTester.Infrastructure.Managers
                 StopStimulus(stimulus);
 
                 Thread.Sleep(timeBetweenStimuli * 1000);
+            }
+        }
+
+        internal static void DisposeOfMultipleStimuli(List<Stimulus> stimuli)
+        {
+            foreach (var stimulus in stimuli)
+            {
+                DisposeOfStimulus(stimulus);
             }
         }
 
