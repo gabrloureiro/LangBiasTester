@@ -18,6 +18,8 @@ namespace LangBiasTester
 
         private LinkedListNode<Trial>? _currentTrial;
         private int _currentTrialBlock;
+        private LinkedList<Stimulus>? _sampleStimuli;
+        private LinkedListNode<Stimulus>? _currentSampleStimulus;
 
         private int _programStage;
         private readonly List<Action> _programStages;
@@ -268,11 +270,40 @@ namespace LangBiasTester
             _timer.Tick -= RunTraining;
             TimerStop();
 
-            StimulusManager.RunMultipleStimuli(_experiment.Stimuli, _experiment.Settings.StimulusDuration, _experiment.Settings.TimeBetweenTrials);
-            _experiment.Instructions.Training.Hide();
-            _experiment.Instructions.TrainingEnd.Show();
+            var sampleStimulusCount = (int)Math.Sqrt((_experiment.Stimuli.Count / _experiment.Settings.TrialBlocks) / _experiment.Settings.SequencesPerTrialBlock);
 
-            KeyDown += DismissTraining;
+            _sampleStimuli = new(_experiment.Stimuli.GetRange(_experiment.Stimuli.Count - sampleStimulusCount, sampleStimulusCount).Select(StimulusManager.Clone));
+
+            _currentSampleStimulus = _sampleStimuli.First;
+
+            StimulusManager.RunStimulus(_currentSampleStimulus.Value);
+
+            _timer.Tick += EndTrainingStimulus;
+            TimerStart(_experiment.Settings.StimulusDuration * 1000);
+        }
+        private void EndTrainingStimulus(object? sender, EventArgs? e)
+        {
+            TimerStop();
+            StimulusManager.StopStimulus(_currentSampleStimulus.Value);
+
+            _currentSampleStimulus = _currentSampleStimulus.Next;
+
+            Thread.Sleep(_experiment.Settings.TimeBetweenTrials * 1000);
+
+            if (_currentSampleStimulus != null)
+            {
+                StimulusManager.RunStimulus(_currentSampleStimulus.Value);
+                TimerStart(_experiment.Settings.StimulusDuration * 1000);
+            }
+            else
+            {
+                _timer.Tick -= EndTrainingStimulus;
+
+                _experiment.Instructions.Training.Hide();
+                _experiment.Instructions.TrainingEnd.Show();
+
+                KeyDown += DismissTraining;
+            }
         }
         private void DismissTraining(object? sender, KeyEventArgs? e)
         {

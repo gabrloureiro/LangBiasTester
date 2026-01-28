@@ -10,7 +10,7 @@ namespace LangBiasTester.Infrastructure.Managers
     internal class LangMixExperiment : Experiment<LangInstructions, LangSettings>
     {
         // Experiment properties
-        private readonly List<LangAudio> Audios;
+        private readonly Dictionary<List<int>, List<LangAudio>> Audios;
         private int _randomizerSeed;
         internal readonly Util _util;
 
@@ -35,29 +35,43 @@ namespace LangBiasTester.Infrastructure.Managers
             _randomizerSeed = ParticipantInfo.ID;
 
             InitLangs();
+            InitAudios();
 
-            var audioFilePath = Settings.UseStaticMixes ? Settings.MixedAudioFilePath : Settings.RawAudioFilePath;
+            foreach (var entry in Audios)
+            {
+                var audios = entry.Value;
 
-            Audios.AddRange(JsonSerializer.Deserialize<List<LangAudio>>(File.ReadAllText(audioFilePath),_jsonSerializerOptions));
+                var stimuli = new List<Stimulus>();
+
+                if (Settings.UseStaticMixes)
+                {
+                    StimulusManager.Init(stimuli, audios, Settings.StimulusDuration);
+                }
+                else if (Settings.UseExplicitMorphSteps)
+                {
+                    StimulusManager.Init(stimuli, audios, Settings.StimulusDuration, Settings.TestLangs, Settings.MorphSteps);
+                }
+                else
+                {
+                    // initialize stimuli using morph settings
+                }
+
+                Stimuli.AddRange(stimuli);
+            }
 
             // Assign audios to stimuli.
             // If using static mixes, all information is already contained in the audio objects.
             // Otherwise, generate stimuli one by one using information in settings.
-            if (Settings.UseStaticMixes)
-            {
-                StimulusManager.Init(Stimuli, Audios, Settings.StimulusDuration);
-            }
-            else if (Settings.UseExplicitMorphSteps)
-            {
-                StimulusManager.Init(Stimuli, Audios, Settings.StimulusDuration, Settings.TestLangs, Settings.MorphSteps);
-            }
-            else
-            {
-                // initialize stimuli using morph settings
-            }
+
+            var sampleAudios = Audios.First().Value;
+            //var sampleStimuli = AllStimuli.First().Value;
+
+            //Stimuli.AddRange(sampleStimuli);
+
+            var stimulusCount = Settings.UseExplicitMorphSteps ? Settings.MorphSteps.Count : Settings.MorphCount;
 
             // Initialize trials
-            TrialManager.Init(Trials, Stimuli, Settings.TrialBlocks, Settings.SequencesPerTrialBlock, _randomizerSeed);
+            TrialManager.Init(Trials, Stimuli, stimulusCount, Settings.TrialBlocks, Settings.SequencesPerTrialBlock, _randomizerSeed);
 
             Instructions.Init();
         }
@@ -107,6 +121,25 @@ namespace LangBiasTester.Infrastructure.Managers
 
                 // Add keys to list of valid response keys
                 Settings.ValidKeys.AddRange(Settings.LangKeys[i]);
+            }
+        }
+
+        private void InitAudios()
+        {
+            if (Settings.UseStaticMixes)
+            {
+                var audioFilePath = Settings.MixedAudioFilePath;
+
+                var audioDict = JsonSerializer.Deserialize<List<KeyValuePair<List<int>, List<LangAudio>>>>(File.ReadAllText(audioFilePath), _jsonSerializerOptions);
+
+                foreach (var kvp in audioDict)
+                {
+                    Audios.Add(kvp.Key, kvp.Value);
+                }
+            }
+            else // Logic to handle mixing audios on the fly (TODO: remove)
+            {
+                var audioFilePath = Settings.RawAudioFilePath;
             }
         }
 

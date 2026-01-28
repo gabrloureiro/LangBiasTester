@@ -24,9 +24,6 @@ namespace LangBiasTester.Infrastructure.Managers
             // If mixed audio is used instead, only one stream will be created.
             foreach (var audio in stimulus.Audios)
             {
-                // TODO: find out if can implement ramping in AudioFileReader so ramp is already loaded when playing file
-                // TODO: apply RMS adjustment after ramping (RMS always very last step)
-
                 var audioFileReader = new AudioFileReader(audio.FileLocation);
                 var waveStream = new OffsetSampleProvider(audioFileReader);
                 var waveOut = new WaveOut();

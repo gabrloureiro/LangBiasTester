@@ -121,6 +121,23 @@ namespace LangBiasTester.Operators.DataHandlers
             var jsonString = JsonSerializer.Serialize(audios, _options);
             File.WriteAllText($"{audioDirectory}/RawAudioMetadata.json", jsonString);
         }
+                
+        private List<LangAudio> GetRawAudioList(LangSettings settings)
+        {
+            // Read raw audio metadata from JSON file
+            var audioJsonString = File.ReadAllText(settings.RawAudioFilePath);
+            var allAudios = JsonSerializer.Deserialize<IEnumerable<LangAudio>>(audioJsonString, _options).ToList();
+            if (allAudios == null) ErrorManager.ThrowError("Could not configure experiment. Check that AudioMetadata.json exists.");
+
+            // Trim audio list to desired count
+            if (settings.AudioCount > allAudios.Count)
+            {
+                ErrorManager.ShowError($"Requested audio count ({settings.AudioCount}) exceeds available audios ({allAudios.Count}). Using all available audios.");
+                settings.AudioCount = allAudios.Count;
+            }
+
+            return allAudios;
+        }
 
         /// <summary>
         /// Creates static audio mixes based on the provided settings and audio data.
@@ -135,42 +152,77 @@ namespace LangBiasTester.Operators.DataHandlers
         /// <exception cref="Exception">Thrown if the audio data cannot be deserialized from the specified file or if the file does not exist.</exception>
         internal void CreateStaticAudioMixes(LangSettings settings)
         {
-            List<LangAudio> mixedAudios = [];
+            var rawAudios = GetRawAudioList(settings);
 
             // Find AudioMetadata JSON file, create if it does not exist
             var mixedAudioDirectory = (new DirectoryInfo(settings.MixedAudioFilePath)).Parent;
             if (!File.Exists(settings.RawAudioFilePath)) ExtractRawAudioMetadata(settings, true);
 
-            // Read raw audio metadata from JSON file
-            var audioJsonString = File.ReadAllText(settings.RawAudioFilePath);
-            var allAudios = JsonSerializer.Deserialize<IEnumerable<LangAudio>>(audioJsonString, _options).ToList();
-            if (allAudios == null) ErrorManager.ThrowError("Could not configure experiment. Check that AudioMetadata.json exists.");
+            // Check that audios are long enough for requested snippet duration and sequences per block
+            var sequencesPerBlock = settings.SequencesPerTrialBlock;
+            var minAudioDuration = rawAudios.Select(audio => audio.Duration).Min().TotalSeconds;
+            var snippetDuration = (double)settings.StimulusDuration;
 
-            // Trim audio list to desired count
-            if (settings.AudioCount > allAudios.Count)
+            if (minAudioDuration / sequencesPerBlock < snippetDuration)
             {
-                ErrorManager.ShowError($"Requested audio count ({settings.AudioCount}) exceeds available audios ({allAudios.Count}). Using all available audios.");
-                settings.AudioCount = allAudios.Count;
+                ErrorManager.ThrowError($"Cannot create {sequencesPerBlock} snippets of {snippetDuration} seconds from shortest audio (duration {minAudioDuration}).");
             }
 
-            // Separate female and male audios
+            // Generate audios for each block, sequence, and round
+            IterativelyWriteAudios(settings, rawAudios, mixedAudioDirectory);
+        }
+
+        /// <summary>
+        /// Separates female and male audios
+        /// </summary>
+        /// <param name="settings"></param>
+        /// <param name="allAudios"></param>
+        /// <returns></returns>
+        private static Dictionary<VoiceGender, List<LangAudio>> SeparateMaleAndFemaleAudios(LangSettings settings, List<LangAudio> allAudios)
+        {
             List<LangAudio> femaleAudios = [.. ExtractVoicesByGender(allAudios, VoiceGender.Female, settings.TestLangs).Take(settings.AudioCount * settings.TestLangs.Count)];
             List<LangAudio> maleAudios = [.. ExtractVoicesByGender(allAudios, VoiceGender.Male, settings.TestLangs).Take(settings.AudioCount * settings.TestLangs.Count)];
-
-            var totalAudios = femaleAudios.Count + maleAudios.Count;
 
             // Show error and exit method if voice gender distribution is not equal
             if (femaleAudios.Count != maleAudios.Count)
             {
-                ErrorManager.ShowError($"Voice gender distribution is not equal ({femaleAudios.Count} female audios and {maleAudios.Count} male audios).");
-                return;
+                ErrorManager.ThrowError($"Voice gender distribution is not equal ({femaleAudios.Count} female audios and {maleAudios.Count} male audios).");
             }
 
             if (femaleAudios.Count > settings.AudioCount || maleAudios.Count > settings.AudioCount)
             {
-                ErrorManager.ShowError($"Number of audios requested exceeds number of audios for one or both genders.\nAudios requested: {settings.AudioCount} per language, {settings.AudioCount * settings.TestLangs.Count} total.\nTotal male audios: {maleAudios.Count}, total female audios: {femaleAudios.Count})");
-                return;
+                ErrorManager.ThrowError($"Number of audios requested exceeds number of audios for one or both genders.\nAudios requested: {settings.AudioCount} per language, {settings.AudioCount * settings.TestLangs.Count} total.\nTotal male audios: {maleAudios.Count}, total female audios: {femaleAudios.Count})");
             }
+            return new()
+            {
+                { VoiceGender.Female, femaleAudios },
+                { VoiceGender.Male, maleAudios }
+            };
+        }
+        
+        /// <summary>
+        /// Iterates through blocks, sequences, and rounds, and create audios for each
+        /// </summary>
+        /// <param name="settings"></param>
+        /// <param name="audios"></param>
+        /// <param name="mixedAudioDirectory"></param>
+        private void IterativelyWriteAudios(LangSettings settings, List<LangAudio> audios, DirectoryInfo mixedAudioDirectory)
+        {
+            // Convert snippet duration to TimeSpan
+            var snippetDuration = TimeSpan.FromSeconds(settings.StimulusDuration);
+
+            // Split audios by voice gender
+            var splitAudios = SeparateMaleAndFemaleAudios(settings, audios);
+            var femaleAudios = splitAudios[VoiceGender.Female];
+            var maleAudios = splitAudios[VoiceGender.Male];
+
+            // Get block, sequence, and round counts
+            var blockCount = (float)settings.TrialBlocks;
+            var sequencesPerBlock = settings.SequencesPerTrialBlock;
+            var roundsPerSequence = settings.UseExplicitMorphSteps ? settings.MorphSteps.Count : settings.MorphCount;
+
+            // Get morph steps to only mix audios with the given proportions
+            var morphSteps = GetMorphSteps(settings);
 
             // Create directory for mixed audios
             var audioFolderString = Directory.GetParent(settings.RawAudioFilePath).ToString() + "/Mixed";
@@ -179,18 +231,91 @@ namespace LangBiasTester.Operators.DataHandlers
             // Create form to show progress
             var progressText = CreateProgressForm();
 
-            // Iterate through audios to add create mixes of different language proportions.
-            // NOTE: currently only works for 2 languages. Mixing 3+ languages would require iterating pairwise.
+            var audioCoords = new List<KeyValuePair<List<int>, List<LangAudio>>>();
+
+            for (int blockNumber = 0; blockNumber < blockCount; blockNumber++)
+            {
+                var blockFolder = audioFolderString + $"/Block_{blockNumber}";
+
+                Directory.CreateDirectory(blockFolder);
+
+                for (int sequenceNumber = 0; sequenceNumber < sequencesPerBlock; sequenceNumber++)
+                {
+                    var startingTimestamp = sequenceNumber * snippetDuration;
+
+                    var sequenceFolder = blockFolder + $"/Seq_{blockNumber}_{sequenceNumber}";
+
+                    Directory.CreateDirectory(sequenceFolder);
+
+                    for (int roundNumber = 0; roundNumber < roundsPerSequence; roundNumber++)
+                    {
+                        var roundFolder = sequenceFolder + $"/Round_{blockNumber}_{sequenceNumber}_{roundNumber}";
+
+                        Directory.CreateDirectory(roundFolder);
+
+                        var nestingInfo = new List<int>([blockNumber, sequenceNumber, roundNumber]);
+
+                        var roundAudios = WriteAudios
+                            (
+                            settings, morphSteps,
+                            femaleAudios, maleAudios,
+                            mixedAudioDirectory, roundFolder, nestingInfo,
+                            startingTimestamp, snippetDuration,
+                            progressText
+                            );
+
+                        // Add created audios to dictionary with nestingInfo as key
+
+                        audioCoords.Add(new KeyValuePair<List<int>, List<LangAudio>>(nestingInfo, roundAudios));
+                    }
+                }
+            }
+
+            // Write MixedAudioMetadata JSON file to register information about mixed audios
+            var jsonString = JsonSerializer.Serialize(audioCoords, _options);
+            File.WriteAllText($"{mixedAudioDirectory}/MixedAudioMetadata.json", jsonString);
+
+            progressText.AppendText("MixedAudioMetadata.json written.");
+        }
+
+        /// <summary>
+        /// Iterates through audios to add create mixes of different language proportions.
+        /// </summary>
+        /// 
+        /// <remark> 
+        /// NOTE: currently only works for 2 languages. Mixing 3+ languages would require iterating pairwise.
+        /// </remark>
+        /// 
+        /// <param name="settings"></param>
+        /// <param name="morphSteps"></param>
+        /// <param name="femaleAudios"></param>
+        /// <param name="maleAudios"></param>
+        /// <param name="mixedAudioDirectory"></param>
+        /// <param name="audioFolderString"></param>
+        /// <param name="nestingInfo"></param>
+        /// <param name="startingTimestamp"></param>
+        /// <param name="duration"></param>
+        /// <param name="progressText"></param>
+        /// <returns></returns>
+        private static List<LangAudio> WriteAudios
+            (
+            LangSettings settings, List<List<int>> morphSteps,
+            List<LangAudio> femaleAudios, List<LangAudio> maleAudios,
+            DirectoryInfo mixedAudioDirectory, string audioFolderString, List<int> nestingInfo,
+            TimeSpan startingTimestamp, TimeSpan duration,
+            TextBox progressText
+            )
+        {
+            var totalAudios = femaleAudios.Count + maleAudios.Count;
             var lang2FemaleCount = 0;
             var lang2MaleCount = 0;
 
-            // Get morph steps to only mix audios with the given proportions
-            var morphSteps = GetMorphSteps(settings);
+            List<LangAudio> mixedAudios = [];
 
-            for (int i = 0; i <= totalAudios/2; i++)
+            for (int i = 0; i <= totalAudios / 2; i++)
             {
                 var lang2Audios = lang2FemaleCount + lang2MaleCount;
-                var lang1Audios = totalAudios/2 - lang2Audios;
+                var lang1Audios = totalAudios / 2 - lang2Audios;
 
                 // If current morph step is in the list of morph steps, create audio for it
                 List<int> curMorphStep = [
@@ -205,7 +330,7 @@ namespace LangBiasTester.Operators.DataHandlers
                     SelectAudios(audiosToMix, femaleAudios, maleAudios, lang2FemaleCount, lang2MaleCount, settings.TestLangs);
 
                     // Create Audio object from audiosToMix and add it to mixedAudios
-                    mixedAudios.Add(LangAudioManager.CreateStaticAudioMix(audiosToMix, audioFolderString));
+                    mixedAudios.Add(LangAudioManager.CreateStaticAudioMix(audiosToMix, audioFolderString, startingTimestamp, duration, nestingInfo));
 
                     progressText.AppendText($"Created static audio mix with audios:\r\n{string.Join(",\r\n", audiosToMix.Select(audio => audio.FileName))}.\r\n");
                 }
@@ -215,14 +340,11 @@ namespace LangBiasTester.Operators.DataHandlers
                 else lang2MaleCount++;
             }
 
-            progressText.AppendText("Static audio mixes created.\r\n");
+            progressText.AppendText($"Static audio mixes created for block {nestingInfo[0]}, sequence {nestingInfo[1]}, round {nestingInfo[2]}.\r\n");
 
-            // Write MixedAudioMetadata JSON file to register information about mixed audios
-            var jsonString = JsonSerializer.Serialize(mixedAudios, _options);
-            File.WriteAllText($"{mixedAudioDirectory}/MixedAudioMetadata.json", jsonString);
-
-            progressText.AppendText("MixedAudioMetadata.json written.");
+            return mixedAudios;
         }
+
         private static List<List<int>> GetMorphSteps(LangSettings settings)
         {
             if (settings.UseExplicitMorphSteps) return settings.MorphSteps;
