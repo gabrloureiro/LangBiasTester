@@ -13,17 +13,7 @@ namespace LangBiasTester.Infrastructure.Managers
             // Generate a new sequence
             var trialSequence = t1i1.GenerateSequence();
             var trialsPerSequence = trialSequence.Count;
-
-            // Create a dummy trial to preserve the T1I1 property
-            var firstTrial = trialSequence[0];
-            // T1I1 sequences are 1:n, so convert for 0-indexing
-            var firstTrialIndex = firstTrial - 1;
-
-            // Get stimulus at block 0, sequence 0, first trial
-            var firstStimulus = stimuli[firstTrialIndex];
-
-            InitTrial(trials, StimulusManager.Clone(firstStimulus), firstTrial, -1);
-
+            
             // Iterate through each block
             for (int blockNumber = 0; blockNumber < trialBlocks; blockNumber++)
             {
@@ -34,34 +24,41 @@ namespace LangBiasTester.Infrastructure.Managers
                 {
                     var firstTrialInSequence = firstTrialInBlock + sequenceNumber * trialsPerSequence;
 
+                    // Create a dummy trial to preserve the T1I1 property
+                    var firstStimulus = stimuli[firstTrialInSequence];
+                    var firstStimulusNumber = trialSequence[0];
+                    InitTrial(trials, StimulusManager.Clone(firstStimulus), firstStimulusNumber, sequenceNumber, blockNumber);
+
                     // Iterate through sequence
                     for (int i = 0; i < trialsPerSequence; i++)
                     {
+                        // Get the round number and the index of the first trial in that round
                         var roundNumber = i / stimulusCount;
-
                         var firstTrialInRound = firstTrialInSequence + roundNumber * stimulusCount;
 
+                        // Trim stimuli list to those in the current round
                         var roundStimuli = stimuli.GetRange(firstTrialInRound, stimulusCount);
 
-                        var stimulus = trialSequence[i];
+                        var stimulusNumber = trialSequence[i];
                         // T1I1 sequences are 1:n, so convert for 0-indexing
-                        var stimulusIndex = stimulus - 1;
+                        var stimulusIndex = stimulusNumber - 1;
 
-                        InitTrial(trials, roundStimuli[stimulusIndex], stimulus, blockNumber);
+                        InitTrial(trials, roundStimuli[stimulusIndex], stimulusNumber, sequenceNumber, blockNumber);
                     }
 
                     // For all iterations before last, generate a new sequence, preserving the first/last trial of the previous sequence
-                    if (sequenceNumber < sequencesPerBlock - 1) trialSequence = t1i1.GenerateSequence(firstTrial);
+                    if (sequenceNumber < sequencesPerBlock - 1) trialSequence = t1i1.GenerateSequence(firstTrialInSequence);
                 }
             }
         }
         
-        private static void InitTrial(LinkedList<Trial> trials, Stimulus stimulus, int stimulusIndex, int blockNumber)
+        private static void InitTrial(LinkedList<Trial> trials, Stimulus stimulus, int stimulusNumber, int sequenceNumber, int blockNumber)
         {
             var newTrial = new Trial(stimulus)
             {
                 Block = blockNumber,
-                StimulusNumber = stimulusIndex
+                Sequence = sequenceNumber,
+                StimulusNumber = stimulusNumber
             };
 
             trials.AddLast(newTrial);

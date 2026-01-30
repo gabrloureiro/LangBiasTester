@@ -1,6 +1,6 @@
 ﻿namespace LangBiasTester
 {
-    partial class ProgramView
+    partial class ExperimentView
     {
         /// <summary>
         ///  Required designer variable.

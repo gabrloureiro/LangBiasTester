@@ -22,7 +22,9 @@ namespace LangBiasTester.Infrastructure.Abstracts
 
         [JsonInclude]
         public LinkedList<Trial> Trials { get; private set; }
+        [JsonIgnore]
         public List<Stimulus> Stimuli { get; private set; }
+        public bool Interrupted { get; set; }
 
         [JsonIgnore]
         internal readonly JsonSerializerOptions _jsonSerializerOptions;
@@ -32,8 +34,11 @@ namespace LangBiasTester.Infrastructure.Abstracts
         [JsonIgnore]
         Settings IExperiment.Settings => Settings;
 
+
         protected Experiment(TSettings settings, ParticipantInfo participantInfo)
         {
+            Interrupted = false;
+
             Settings = settings;
 
             Stimuli = [];

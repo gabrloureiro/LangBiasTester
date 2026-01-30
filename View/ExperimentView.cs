@@ -5,7 +5,7 @@ using LangBiasTester.Infrastructure.Models;
 
 namespace LangBiasTester
 {
-    public partial class ProgramView : Form
+    public partial class ExperimentView : Form
     {
         #region Properties
         internal readonly IExperiment _experiment;
@@ -17,7 +17,7 @@ namespace LangBiasTester
         private readonly System.Windows.Forms.Timer _timer;
 
         private LinkedListNode<Trial>? _currentTrial;
-        private int _currentTrialBlock;
+        private int _currentTrialSequence;
         private LinkedList<Stimulus>? _sampleStimuli;
         private LinkedListNode<Stimulus>? _currentSampleStimulus;
 
@@ -31,7 +31,7 @@ namespace LangBiasTester
         /// </summary>
         /// <param name="experiment">The Experiment instance that contains all information about trials, stimuli, and settings. Cannot be null.</param>
         /// <param name="util">The Util instance that supplies utility functions or services required by the view. Cannot be null.</param>
-        internal ProgramView(IExperiment experiment)
+        internal ExperimentView(IExperiment experiment)
         {
             InitializeComponent();
 
@@ -185,7 +185,7 @@ namespace LangBiasTester
         internal void RunExperiment()
         {
             _currentTrial = _experiment.Trials.First;
-            _currentTrialBlock = 0;
+            _currentTrialSequence = 0;
 
             RunTrial(_currentTrial);
         }
@@ -210,6 +210,7 @@ namespace LangBiasTester
 
         internal void InterruptExperiment()
         {
+            _experiment.Interrupted = true;
             var exit = MessageBox.Show("It appears you have pressed the escape key. Would you like to terminate the experiment here?", "Interrupt Experiment?", MessageBoxButtons.YesNo);
 
             if (exit == DialogResult.Yes)
@@ -218,8 +219,9 @@ namespace LangBiasTester
 
                 if (keepData == DialogResult.Yes)
                 {
+                    KeyDown -= StartNewTrialSequence;
                     KeyDown -= CatchResponse;
-                    _experiment.Instructions.Response.Hide();
+                    _experiment.Instructions.HideAll();
                     EndExperiment();
                 }
                 else if (keepData == DialogResult.Cancel) return;
@@ -348,8 +350,12 @@ namespace LangBiasTester
 
             var response = e.KeyCode;
 
-            if (response == Keys.Escape) InterruptExperiment();
-            
+            if (response == Keys.Escape)
+            {
+                InterruptExperiment();
+                return;
+            }
+
             var validResponse = _experiment.Settings.ValidKeys.Contains(response);
             if (!validResponse) return;
 
@@ -367,14 +373,24 @@ namespace LangBiasTester
 
             NextTrial();
         }
-        private void StartNewTrialBlock(object? sender, KeyEventArgs? e)
+        private void StartNewTrialSequence(object? sender, KeyEventArgs? e)
         {
-            if (e != null) e.SuppressKeyPress = true;
-            KeyDown -= StartNewTrialBlock;
+            if (e == null) return;
+            e.SuppressKeyPress = true;
+
+            var key = e.KeyCode;
+
+            if (key == Keys.Escape)
+            {
+                InterruptExperiment();
+                return;
+            }
+
+            KeyDown -= StartNewTrialSequence;
 
             _experiment.Instructions.BlockEnd.Hide();
 
-            _currentTrialBlock++;
+            _currentTrialSequence++;
 
             RunTrial(_currentTrial);
         }
@@ -435,10 +451,10 @@ namespace LangBiasTester
 
             // TODO: figure out where to place breaks (between blocks, sequences, etc)
             if (_currentTrial == null) ProgramControl();
-            else if (_currentTrial.Value.Block != _currentTrialBlock)
+            else if (_currentTrial.Value.Sequence != _currentTrialSequence)
             {
                 _experiment.Instructions.BlockEnd.Show();
-                KeyDown += StartNewTrialBlock;
+                KeyDown += StartNewTrialSequence;
             }
             else RunTrial(_currentTrial);
         }

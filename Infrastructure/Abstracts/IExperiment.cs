@@ -12,6 +12,7 @@ namespace LangBiasTester.Infrastructure.Abstracts
         Settings Settings { get; }
         SettingsForm SettingsUI { get; set; }
         Instructions Instructions { get; }
+        bool Interrupted { get; set; }
 
         void Init();
         void ExportData();

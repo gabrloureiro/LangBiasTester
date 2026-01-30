@@ -17,9 +17,11 @@ namespace LangBiasTester.Infrastructure.Models
         internal TimeSpan ResponseTime { get; set; }
 
 
-        // Trial block
+        // Trial block and sequence
         [JsonInclude, JsonPropertyName("TrialBlock")]
         internal int Block { get; set; }
+        [JsonInclude, JsonPropertyName("SequenceNumber")]
+        internal int Sequence { get; set; }
 
 
         // Stimulus properties

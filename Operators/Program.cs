@@ -17,7 +17,7 @@ namespace LangBiasTester.Operators
 
             LangMixExperiment experiment = new(settings, new ParticipantInfo(), util);
 
-            ProgramView form = new (experiment);
+            ExperimentView form = new (experiment);
 
             Application.Run(form);
         }
