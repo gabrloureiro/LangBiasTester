@@ -15,22 +15,31 @@ namespace LangBiasTester.Infrastructure.Managers
         /// </summary>
         /// <param name="Audios">The list of files to mix</param>
         /// <param name="folder">Folder to save the .wav file to</param>
-        internal static LangAudio CreateStaticAudioMix(List<LangAudio> audiosToMix, string folder, TimeSpan startingTimestamp, TimeSpan duration, List<int> nestingInfo)
+        internal static LangAudio CreateStaticAudioMix(List<LangAudio> audiosToMix, string folder, double timestamp, double duration, bool isTrimmed = false)
         {
             var langMixes = new Dictionary<Lang, int>();
-            var fileName = GenerateFileName(audiosToMix, langMixes, nestingInfo);
+            var fileName = GenerateFileName(audiosToMix, langMixes);
             var fileLocation = new FileInfo($"{folder}/{fileName}.wav").FullName;
 
-            SaveMixedAudio(audiosToMix, $"{folder}/{fileName}.wav", startingTimestamp, duration);
+            var startingTimespan = TimeSpan.FromSeconds(timestamp);
+            var durationTimespan = TimeSpan.FromSeconds(duration);
+
+            SaveMixedAudio(audiosToMix, fileName: $"{folder}/{fileName}.wav", startingTimespan, durationTimespan);
 
             // Create audio object to add mixed audios
             LangAudio mixedAudio = new()
             {
                 FileName = fileName,
                 FileLocation = fileLocation,
-                Duration = new AudioFileReader(fileLocation).TotalTime,
+
                 MixLangs = langMixes,
-                RawAudios = [.. audiosToMix.Select(audio => audio.FileName)]
+                
+                RawAudios = [.. audiosToMix.Select(audio => audio.FileName)],
+
+                IsTrimmed = isTrimmed,
+                SnippetTimestamp = startingTimespan,
+                SnippetDuration = durationTimespan,
+                Duration = isTrimmed ? durationTimespan : audiosToMix[0].Duration
             };
 
             return mixedAudio;
@@ -41,7 +50,7 @@ namespace LangBiasTester.Infrastructure.Managers
         /// </summary>
         /// <param name="audiosToMix">A list of <see cref="Audio"/> objects with the information about the audios to mix.</param>
         /// <param name="fileName">The name and location of the file.</param>
-        private static void SaveMixedAudio(List<LangAudio> audiosToMix, string fileName, TimeSpan startingTimestamp, TimeSpan duration)
+        private static void SaveMixedAudio(List<LangAudio> audiosToMix, string fileName, TimeSpan startingTimestamp, TimeSpan duration, double ramp = 0.01)
         {
             // Create a list for the AudioFileReaders for each file
             Dictionary<AudioFileReader, float[]> audioStreams = [];
@@ -50,7 +59,8 @@ namespace LangBiasTester.Infrastructure.Managers
             foreach (var audio in audiosToMix)
             {
                 var audioFile = new AudioFileReader(audio.FileLocation);
-                audioStreams[audioFile] = ReadAllSamples(new AudioFileReader(audio.FileLocation));
+                var stream = ReadAllSamples(new AudioFileReader(audio.FileLocation));
+                audioStreams[audioFile] = CosRamp(stream, audioFile.WaveFormat.SampleRate, ramp);
             }
 
             // Normalize audios
@@ -62,9 +72,6 @@ namespace LangBiasTester.Infrastructure.Managers
                 SkipOver = startingTimestamp,
                 Take = duration
             });
-            
-            // TODO: Add ramping
-            // cosine ramping logic
 
             // Mix audios
             var mixer = new MixingSampleProvider(offsetProviders);
@@ -81,7 +88,7 @@ namespace LangBiasTester.Infrastructure.Managers
         /// <param name="audiosToMix">The list of audios mixed.</param>
         /// <param name="langMixes">The specific mix of languages.</param>
         /// <returns>A string corresponding to the name of the file.</returns>
-        private static string GenerateFileName(List<LangAudio> audiosToMix, Dictionary<Lang, int> langMixes, List<int> nestingInfo)
+        private static string GenerateFileName(List<LangAudio> audiosToMix, Dictionary<Lang, int> langMixes)
         {
             var audioLangs = audiosToMix.Select(audio => audio.Lang).Distinct().ToList();
             List<string> langCounts = [];
@@ -94,9 +101,8 @@ namespace LangBiasTester.Infrastructure.Managers
             }
 
             var langCountString = string.Join("_", langCounts);
-            var nestingString = string.Join("_", nestingInfo.Select(number => number.ToString()));
 
-            return string.Join("_", langCountString, nestingString);
+            return langCountString;
         }
 
         /// <summary>

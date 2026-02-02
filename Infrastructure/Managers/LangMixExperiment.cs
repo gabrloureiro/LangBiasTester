@@ -137,7 +137,7 @@ namespace LangBiasTester.Infrastructure.Managers
                     Audios.Add(kvp.Key, kvp.Value);
                 }
             }
-            else // Logic to handle mixing audios on the fly (TODO: remove)
+            else // Logic to handle mixing audios on the fly
             {
                 var audioFilePath = Settings.RawAudioFilePath;
             }

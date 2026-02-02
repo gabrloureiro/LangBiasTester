@@ -25,6 +25,9 @@ namespace LangBiasTester.Operators
         public string? RawAudioFilePath { get; set; }
         public bool UseStaticMixes { get; set; }
         public string? MixedAudioFilePath { get; set; }
+        public bool RandomizeSnippetStartingPoint { get; set; }
+        public bool RestrictSnippetRangePerSequence { get; set; }
+        public double AudioMargin { get; set; }
 
 
         public Dictionary<Lang, string>? Instructions { get; set; }

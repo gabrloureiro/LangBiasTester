@@ -5,7 +5,7 @@
   "RunDemo": false,
 
   "RunTraining": true,
-  "RepeatTrainingKey": "G",
+  "RepeatTrainingKey": "B",
 
   "TestConfidence": true,
   "TestReactionTime": false,
@@ -25,7 +25,7 @@
   "ControlLang": "CN",
 
   "LangKeys": [
-    [ "D", "S", "A" ],
+    [ "F", "D", "S" ],
     [ "J", "K", "L" ]
   ],
 
@@ -34,7 +34,7 @@
 
   "AudioCount": 11,
   "UseExplicitMorphSteps": false,
-  "MorphCount": 11,
+  "MorphCount": 2,
   "MorphSteps": [
     [ 100, 0 ],
     [ 90, 10 ],
@@ -51,5 +51,8 @@
 
   "RawAudioFilePath": "config/audio/RawAudioMetadata.json",
   "UseStaticMixes": true,
-  "MixedAudioFilePath": "config/audio/MixedAudioMetadata.json"
+  "MixedAudioFilePath": "config/audio/MixedAudioMetadata.json",
+  "RandomizeSnippetStartingPoint": true,
+  "RestrictSnippetRangePerSequence": true,
+  "AudioMargin": 2.0
 }

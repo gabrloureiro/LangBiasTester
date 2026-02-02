@@ -19,22 +19,9 @@ namespace LangBiasTester.Infrastructure.Managers
         }
         internal static void RunStimulus(Stimulus stimulus)
         {
-            // TODO: Move this to Init() so buffers are ready by the time they need to be played
+            BufferStimulus(stimulus);
+
             // Iterates through all audio snippets in the current trial and plays them simultaneously.
-            // If mixed audio is used instead, only one stream will be created.
-            foreach (var audio in stimulus.Audios)
-            {
-                var audioFileReader = new AudioFileReader(audio.FileLocation);
-                var waveStream = new OffsetSampleProvider(audioFileReader);
-                var waveOut = new WaveOut();
-
-                waveStream.SkipOver = audio.SnippetTimestamp;
-
-                waveOut.Init(waveStream);
-
-                stimulus.WaveStreams.Add(waveStream, waveOut);
-            }
-
             foreach (KeyValuePair<OffsetSampleProvider, WaveOut> stream in stimulus.WaveStreams)
             {
                 stream.Value.Play();
@@ -76,6 +63,26 @@ namespace LangBiasTester.Infrastructure.Managers
             foreach (var stimulus in stimuli)
             {
                 DisposeOfStimulus(stimulus);
+            }
+        }
+
+        private static void BufferStimulus(Stimulus stimulus)
+        {
+            // If mixed audio is used, only one stream will be created (and thus loop will run only once).
+            foreach (var audio in stimulus.Audios)
+            {
+                var audioFileReader = new AudioFileReader(audio.FileLocation);
+                var waveStream = new OffsetSampleProvider(audioFileReader);
+                var waveOut = new WaveOut();
+
+                if (!audio.IsTrimmed)
+                {
+                    waveStream.SkipOver = audio.SnippetTimestamp;
+                }
+
+                waveOut.Init(waveStream);
+
+                stimulus.WaveStreams.Add(waveStream, waveOut);
             }
         }
 

@@ -272,7 +272,7 @@ namespace LangBiasTester
             _timer.Tick -= RunTraining;
             TimerStop();
 
-            var sampleStimulusCount = (int)Math.Sqrt((_experiment.Stimuli.Count / _experiment.Settings.TrialBlocks) / _experiment.Settings.SequencesPerTrialBlock);
+            var sampleStimulusCount = (int) float.Sqrt((_experiment.Stimuli.Count / _experiment.Settings.TrialBlocks) / _experiment.Settings.SequencesPerTrialBlock);
 
             _sampleStimuli = new(_experiment.Stimuli.GetRange(_experiment.Stimuli.Count - sampleStimulusCount, sampleStimulusCount).Select(StimulusManager.Clone));
 

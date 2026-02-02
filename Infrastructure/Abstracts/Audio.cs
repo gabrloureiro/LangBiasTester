@@ -6,6 +6,8 @@
         public string? FileLocation { get; set; }
         public TimeSpan Duration { get; set; }
 
+        public bool IsTrimmed { get; set; }
+
         public TimeSpan SnippetTimestamp { get; set; }
         public TimeSpan SnippetDuration { get; set; }
     }

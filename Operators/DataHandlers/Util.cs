@@ -121,7 +121,7 @@ namespace LangBiasTester.Operators.DataHandlers
             var jsonString = JsonSerializer.Serialize(audios, _options);
             File.WriteAllText($"{audioDirectory}/RawAudioMetadata.json", jsonString);
         }
-                
+               
         private List<LangAudio> GetRawAudioList(LangSettings settings)
         {
             // Read raw audio metadata from JSON file
@@ -162,10 +162,11 @@ namespace LangBiasTester.Operators.DataHandlers
             var sequencesPerBlock = settings.SequencesPerTrialBlock;
             var minAudioDuration = rawAudios.Select(audio => audio.Duration).Min().TotalSeconds;
             var snippetDuration = (double)settings.StimulusDuration;
+            var audioMargin = settings.AudioMargin;
 
-            if (minAudioDuration / sequencesPerBlock < snippetDuration)
+            if ((minAudioDuration - audioMargin*2) / sequencesPerBlock < snippetDuration)
             {
-                ErrorManager.ThrowError($"Cannot create {sequencesPerBlock} snippets of {snippetDuration} seconds from shortest audio (duration {minAudioDuration}).");
+                ErrorManager.ThrowError($"Cannot create {sequencesPerBlock} snippets of {snippetDuration} seconds from shortest audio (duration {minAudioDuration}) using given audio margin ({audioMargin}).");
             }
 
             // Generate audios for each block, sequence, and round
@@ -208,8 +209,10 @@ namespace LangBiasTester.Operators.DataHandlers
         /// <param name="mixedAudioDirectory"></param>
         private void IterativelyWriteAudios(LangSettings settings, List<LangAudio> audios, DirectoryInfo mixedAudioDirectory)
         {
-            // Convert snippet duration to TimeSpan
-            var snippetDuration = TimeSpan.FromSeconds(settings.StimulusDuration);
+            // Get audio information
+            var snippetDuration = settings.StimulusDuration;
+            var audioMargin = settings.AudioMargin;
+            var totalAudioDuration = audios.Select(audio => audio.Duration).Min().TotalSeconds - 2*audioMargin;
 
             // Split audios by voice gender
             var splitAudios = SeparateMaleAndFemaleAudios(settings, audios);
@@ -217,9 +220,14 @@ namespace LangBiasTester.Operators.DataHandlers
             var maleAudios = splitAudios[VoiceGender.Male];
 
             // Get block, sequence, and round counts
-            var blockCount = (float)settings.TrialBlocks;
+            var blockCount = settings.TrialBlocks;
             var sequencesPerBlock = settings.SequencesPerTrialBlock;
             var roundsPerSequence = settings.UseExplicitMorphSteps ? settings.MorphSteps.Count : settings.MorphCount;
+            var sequenceRange = totalAudioDuration / sequencesPerBlock;
+
+            // Get random starting point strategy
+            var randomizeStartingPoint = settings.RandomizeSnippetStartingPoint;
+            var restrictSnippetRangePerSequence = settings.RestrictSnippetRangePerSequence;
 
             // Get morph steps to only mix audios with the given proportions
             var morphSteps = GetMorphSteps(settings);
@@ -233,40 +241,47 @@ namespace LangBiasTester.Operators.DataHandlers
 
             var audioCoords = new List<KeyValuePair<List<int>, List<LangAudio>>>();
 
-            for (int blockNumber = 0; blockNumber < blockCount; blockNumber++)
+            for (int b = 0; b < blockCount; b++)
             {
-                var blockFolder = audioFolderString + $"/Block_{blockNumber}";
-
+                var blockFolder = audioFolderString + $"/Block_{b}";
                 Directory.CreateDirectory(blockFolder);
 
-                for (int sequenceNumber = 0; sequenceNumber < sequencesPerBlock; sequenceNumber++)
+                for (int s = 0; s < sequencesPerBlock; s++)
                 {
-                    var startingTimestamp = sequenceNumber * snippetDuration;
-
-                    var sequenceFolder = blockFolder + $"/Seq_{blockNumber}_{sequenceNumber}";
-
+                    var sequenceFolder = blockFolder + $"/Seq_{s}";
                     Directory.CreateDirectory(sequenceFolder);
 
-                    for (int roundNumber = 0; roundNumber < roundsPerSequence; roundNumber++)
-                    {
-                        var roundFolder = sequenceFolder + $"/Round_{blockNumber}_{sequenceNumber}_{roundNumber}";
+                    // starting timestamp can be:
+                    // - restricted by sequence: audioMargin + s * sequenceRange
+                    // - not restricted: audioMargin
+                    var startingTimestamp = restrictSnippetRangePerSequence ? audioMargin + (s * sequenceRange) : audioMargin;
 
+                    for (int r = 0; r < roundsPerSequence; r++)
+                    {
+                        var roundFolder = sequenceFolder + $"/Round_{r}";
                         Directory.CreateDirectory(roundFolder);
 
-                        var nestingInfo = new List<int>([blockNumber, sequenceNumber, roundNumber]);
+                        // random offset can be added within the allowed range:
+                        // - if restricted by sequence: [0, snippetDuration]
+                        // - if not restricted: [0, totalAudioDuration - snippetDuration]
+                        var randomOffset = randomizeStartingPoint ? (restrictSnippetRangePerSequence ? snippetDuration : (totalAudioDuration - snippetDuration)) : 0.0;
 
                         var roundAudios = WriteAudios
                             (
-                            settings, morphSteps,
+                            settings,
+                            progressText,
+                            morphSteps,
                             femaleAudios, maleAudios,
-                            mixedAudioDirectory, roundFolder, nestingInfo,
+                            roundFolder,
                             startingTimestamp, snippetDuration,
-                            progressText
+                            randomOffset,
+                            trimmed: true
                             );
 
                         // Add created audios to dictionary with nestingInfo as key
+                        audioCoords.Add(new KeyValuePair<List<int>, List<LangAudio>>(new List<int>([b, s, r]), roundAudios));
 
-                        audioCoords.Add(new KeyValuePair<List<int>, List<LangAudio>>(nestingInfo, roundAudios));
+                        progressText.AppendText($"Static audio mixes created for block {b}, sequence {s}, round {r}.\r\n");
                     }
                 }
             }
@@ -299,11 +314,14 @@ namespace LangBiasTester.Operators.DataHandlers
         /// <returns></returns>
         private static List<LangAudio> WriteAudios
             (
-            LangSettings settings, List<List<int>> morphSteps,
+            LangSettings settings,
+            TextBox progressText,
+            List<List<int>> morphSteps,
             List<LangAudio> femaleAudios, List<LangAudio> maleAudios,
-            DirectoryInfo mixedAudioDirectory, string audioFolderString, List<int> nestingInfo,
-            TimeSpan startingTimestamp, TimeSpan duration,
-            TextBox progressText
+            string audioFolderString,
+            double startingTimestamp, double duration,
+            double randomOffset = 0.0,
+            bool trimmed = false
             )
         {
             var totalAudios = femaleAudios.Count + maleAudios.Count;
@@ -329,8 +347,12 @@ namespace LangBiasTester.Operators.DataHandlers
                     // Select audios according to current language balance
                     SelectAudios(audiosToMix, femaleAudios, maleAudios, lang2FemaleCount, lang2MaleCount, settings.TestLangs);
 
+                    // Apply random offset
+                    var offset = _rnd.NextDouble() * randomOffset;
+                    startingTimestamp += offset;
+
                     // Create Audio object from audiosToMix and add it to mixedAudios
-                    mixedAudios.Add(LangAudioManager.CreateStaticAudioMix(audiosToMix, audioFolderString, startingTimestamp, duration, nestingInfo));
+                    mixedAudios.Add(LangAudioManager.CreateStaticAudioMix(audiosToMix, audioFolderString, startingTimestamp, duration, trimmed));
 
                     progressText.AppendText($"Created static audio mix with audios:\r\n{string.Join(",\r\n", audiosToMix.Select(audio => audio.FileName))}.\r\n");
                 }
@@ -339,8 +361,6 @@ namespace LangBiasTester.Operators.DataHandlers
                 if (i % 2 == 0) lang2FemaleCount++;
                 else lang2MaleCount++;
             }
-
-            progressText.AppendText($"Static audio mixes created for block {nestingInfo[0]}, sequence {nestingInfo[1]}, round {nestingInfo[2]}.\r\n");
 
             return mixedAudios;
         }
@@ -365,6 +385,7 @@ namespace LangBiasTester.Operators.DataHandlers
 
             return morphSteps;
         }
+
         /// <summary>
         /// Updates audiosToMix with a number of audios from each language.
         /// </summary>
