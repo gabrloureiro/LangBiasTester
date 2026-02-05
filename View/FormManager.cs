@@ -21,9 +21,9 @@ namespace LangBiasTester.View
         /// <param name="backColor">The background color to apply to the control.</param>
         /// <param name="font">The font to use for the control's text.</param>
         /// <param name="text">The text to display on the control.</param>
-        internal static void SetUpControl(Control control, string name, Color backColor, Font font, Size size = default)
+        internal static void SetUpControl(Control control, Color backColor, Font font, Size size = default, string? name = null)
         {
-            control.Name = name;
+            if (name != null) control.Name = name;
 
             // Position and size
             control.Anchor = AnchorStyles.None;
@@ -37,13 +37,13 @@ namespace LangBiasTester.View
 
             control.TabIndex = 0;
         }
-        internal static void SetUpControl(Control control, string name)
+        internal static void SetUpControl(Control control, string? name = null)
         {
             var backColor = Color.Black;
             var size = new Size(1440, 1080);
             var font = new Font("Arial", 32F, FontStyle.Bold, GraphicsUnit.Point, 0);
 
-            SetUpControl(control, name, backColor, font, size);
+            SetUpControl(control, backColor, font, size, name);
         }
         /// <summary>
         /// Displays a grid of labels within the specified parent control, using the provided grid data.
@@ -174,10 +174,10 @@ namespace LangBiasTester.View
             SetUpControl
                 (
                 label,
-                "GenericLabel",
                 Color.Black,
                 new Font("Arial", 24F, FontStyle.Bold, GraphicsUnit.Point),
-                size
+                size,
+                "GenericLabel"
                 );
 
             label.Text = text;

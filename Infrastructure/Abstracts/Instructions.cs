@@ -1,32 +1,46 @@
-﻿namespace LangBiasTester.Infrastructure.Abstracts
+﻿using System.Reflection;
+
+namespace LangBiasTester.Infrastructure.Abstracts
 {
+    public enum InstructionType
+    {
+        Intro,
+        Training,
+        TrainingEnd,
+        ResponseTraining,
+        ExperimentStart,
+        Response,
+        BlockEnd,
+        End
+    }
+
     internal abstract class Instructions
     {
-        internal Control Intro;
-        internal Control Training;
-        internal Control TrainingEnd;
-        internal Control Response;
-        internal Control BlockEnd;
-        internal Control Exit;
+        protected Dictionary<InstructionType, Control> InstructionDict = [];
 
         internal Instructions()
         {
-            Intro = new();
-            Training = new();
-            TrainingEnd = new();
-            Response = new();
-            BlockEnd = new();
-            Exit = new();
+            foreach (var instructionType in Enum.GetValues(typeof(InstructionType)).Cast<InstructionType>())
+            {
+                InstructionDict.Add(instructionType, new Control());
+            }
         }
         internal abstract void Init();
         internal void HideAll()
         {
-            Intro.Hide();
-            Training.Hide();
-            TrainingEnd.Hide();
-            Response.Hide();
-            BlockEnd.Hide();
-            Exit.Hide();
+            foreach (var instruction in InstructionDict)
+            {
+                instruction.Value.Hide();
+            }
         }
+        internal void Show(InstructionType instruction)
+        {
+            InstructionDict[instruction].Show();
+        }
+        internal void Hide(InstructionType instruction)
+        {
+            InstructionDict[instruction].Hide();
+        }
+        internal List<Control> GetControls() => [.. InstructionDict.Values];
     }
 }

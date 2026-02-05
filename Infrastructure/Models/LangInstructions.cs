@@ -1,10 +1,10 @@
 ﻿using LangBiasTester.Infrastructure.Abstracts;
-using LangBiasTester.Operators;
 using LangBiasTester.Infrastructure.Enums;
-using static LangBiasTester.Infrastructure.Enums.Lang;
+using LangBiasTester.Operators;
 using LangBiasTester.Operators.InputHandlers;
 using LangBiasTester.View;
-using System.Security.Cryptography;
+using static LangBiasTester.Infrastructure.Enums.Lang;
+using static LangBiasTester.Infrastructure.Abstracts.InstructionType;
 
 namespace LangBiasTester.Infrastructure.Models
 {
@@ -12,53 +12,62 @@ namespace LangBiasTester.Infrastructure.Models
     {
         private readonly LangSettings _settings;
 
+        private readonly List<Action> InstructionSetupMethods;
+
         public LangInstructions(LangSettings settings)
         {
             if (settings.TestLangs == null) ErrorManager.ThrowError("Missing information about languages to be tested. Check settings.json.", "Error: Could Not Create Instructions");
             if (settings.LangKeys == null) ErrorManager.ThrowError("Missing key assignment for languages. Check settings.json.", "Error: Could Not Create Instructions");
 
-            Intro = new Label()
+            foreach (var instructionType in Enum.GetValues(typeof(InstructionType)).Cast<InstructionType>())
             {
-                TextAlign = ContentAlignment.MiddleCenter
-            };
-            Training = new Label()
-            {
-                TextAlign = ContentAlignment.MiddleCenter
-            };
-            TrainingEnd = new Label()
-            {
-                TextAlign = ContentAlignment.MiddleCenter
-            };
-            BlockEnd = new Label()
-            {
-                TextAlign = ContentAlignment.MiddleCenter
-            };
-            Exit = new Label()
-            {
-                TextAlign = ContentAlignment.MiddleCenter
-            };
+                if (instructionType == Response)
+                {
+                    InstructionDict[instructionType] = new Control();
+                }
+                else
+                {
+                    InstructionDict[instructionType] = new Label()
+                    {
+                        TextAlign = ContentAlignment.MiddleCenter
+                    };
+                }
+            }
 
             _settings = settings;
+
+            InstructionSetupMethods =
+                [
+                    SetIntroInstructions,
+                    SetExperimentStartInstructions,
+                    SetResponseInstructions,
+                    SetBlockEndInstructions,
+                    SetExitInstructions
+                ];
+
+            if (_settings.RunTraining)
+            {
+                InstructionSetupMethods.AddRange(
+                    [
+                        SetTrainingInstructions,
+                        SetTrainingEndInstructions,
+                        SetResponseTrainingInstructions
+                    ]);
+            }
         }
 
         internal override void Init()
         {
-            SetIntroInstructions(_settings.TestConfidence);
-
-            if (_settings.RunTraining)
+            foreach (var method in InstructionSetupMethods)
             {
-                var trainingKey = (Keys)_settings.RepeatTrainingKey;
-                SetTrainingInstructions();
-                SetTrainingEndInstructions(trainingKey);
+                method();
             }
-            SetResponseInstructions();
-            SetBlockEndInstructions();
-            SetExitInstructions();
         }
 
-        private void SetIntroInstructions(bool testConfidence)
+        private void SetIntroInstructions()
         {
             var instructions = new Dictionary<Lang, string>();
+            var testConfidence = _settings.TestConfidence;
 
             if (testConfidence)
             {
@@ -86,31 +95,44 @@ namespace LangBiasTester.Infrastructure.Models
                     );
             }
 
-            Intro.Text = $"{instructions[_settings.TestLangs[0]]}\n\n{instructions[_settings.TestLangs[1]]}";
+            InstructionDict[Intro].Text = $"{instructions[_settings.TestLangs[0]]}\n\n{instructions[_settings.TestLangs[1]]}";
         }
 
         private void SetTrainingInstructions()
         {
-            //TODO change message
             var instructions = new Dictionary<Lang, string>()
             {
                 { EN, "These are some examples of sounds you will hear." },
                 { FR, "Voici quelques exemples des sons que vous allez entendre." }
             };
 
-            Training.Text = $"{instructions[_settings.TestLangs[0]]}\n\n{instructions[_settings.TestLangs[1]]}";
+            InstructionDict[Training].Text = $"{instructions[_settings.TestLangs[0]]}\n\n{instructions[_settings.TestLangs[1]]}";
         }
 
-        private void SetTrainingEndInstructions(Keys repeatTrainingKey)
+        private void SetTrainingEndInstructions()
         {
-            //TODO change message
+            var repeatTrainingKey = _settings.RepeatTrainingKey;
+
             var instructions = new Dictionary<Lang, string>()
             {
-                { EN, $"Press {repeatTrainingKey} to repeat these examples. Press any other key to advance to trials." },
-                { FR, $"Appuyez sur {repeatTrainingKey} pour répéter ces exemples. Appuyez sur toute autre touche pour passer aux essais." }
+                { EN, $"Press {repeatTrainingKey} to repeat these examples. Press any other key to continue." },
+                { FR, $"Appuyez sur {repeatTrainingKey} pour répéter ces exemples. Appuyez sur toute autre touche pour continuer." }
             };
 
-            TrainingEnd.Text = $"{instructions[_settings.TestLangs[0]]}\n\n{instructions[_settings.TestLangs[1]]}";
+            InstructionDict[TrainingEnd].Text = $"{instructions[_settings.TestLangs[0]]}\n\n{instructions[_settings.TestLangs[1]]}";
+        }
+
+        private void SetResponseTrainingInstructions()
+        {
+            var instructions = new Dictionary<Lang, string>()
+            {
+                { EN, "The following screen will be presented to you after every trial so that you can indicate your level of certainty in the language you identify. " +
+                "Take a moment to familiarize yourself with the scale, then press any key when you are ready to proceed to trials." },
+                { FR, "L'écran suivant vous sera présenté après chaque essai pour que vous puissiez indiquer votre niveau de certitude quant à la langue que vous identifiez. " +
+                "Prenez un moment pour vous familiariser avec l'échelle, puis appuyez sur n'importe quelle touche quand vous serez prêt.e à passer aux essais." }
+            };
+
+            InstructionDict[ResponseTraining].Text = $"{instructions[_settings.TestLangs[0]]}\n\n{instructions[_settings.TestLangs[1]]}";
         }
 
         private void SetResponseInstructions()
@@ -194,31 +216,40 @@ namespace LangBiasTester.Infrastructure.Models
             var header = instructions[_settings.TestLangs[0]];
             var footer = instructions[_settings.TestLangs[1]];
 
-            Response = FormManager.LabelGrid(header, footer, strings);
-        } 
+            InstructionDict[Response] = FormManager.LabelGrid(header, footer, strings);
+        }
+
+        private void SetExperimentStartInstructions()
+        {
+            var instructions = new Dictionary<Lang, string>()
+            {
+                { EN, "The experiment is now beginning." },
+                { FR, "L'expérience commence maintenant." }
+            };
+
+            InstructionDict[ExperimentStart].Text = $"{instructions[_settings.TestLangs[0]]}\n\n{instructions[_settings.TestLangs[1]]}";
+        }
 
         private void SetBlockEndInstructions()
         {
-            //TODO change message
             var instructions = new Dictionary<Lang, string>()
             {
                 { EN, "This block of trials is over. Feel free to take some time to rest. Press any key when you are ready to continue." },
                 { FR, "Ce bloc d'essais est terminé. N'hésitez pas à prendre un moment pour vous reposer. Appuyez sur n'importe quelle touche quand vous êtes prêt.e à continuer." }
             };
 
-            BlockEnd.Text = $"{instructions[_settings.TestLangs[0]]}\n\n{instructions[_settings.TestLangs[1]]}";
+            InstructionDict[BlockEnd].Text = $"{instructions[_settings.TestLangs[0]]}\n\n{instructions[_settings.TestLangs[1]]}";
         }
 
         private void SetExitInstructions()
         {
-            //TODO change message
             var instructions = new Dictionary<Lang, string>()
             {
                 { EN, "The experiment is over. Thank you for your participation." },
                 { FR, "L'expérience est terminée. Merci de votre participation." }
             };
 
-            Exit.Text = $"{instructions[_settings.TestLangs[0]]}\n\n{instructions[_settings.TestLangs[1]]}";
+            InstructionDict[End].Text = $"{instructions[_settings.TestLangs[0]]}\n\n{instructions[_settings.TestLangs[1]]}";
         }
     }
 }

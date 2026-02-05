@@ -2,11 +2,13 @@ using LangBiasTester.Infrastructure.Managers;
 using LangBiasTester.Infrastructure.Abstracts;
 using LangBiasTester.View;
 using LangBiasTester.Infrastructure.Models;
+using static LangBiasTester.Infrastructure.Abstracts.InstructionType;
 
 namespace LangBiasTester
 {
     public partial class ExperimentView : Form
     {
+        /// Properties of the Experiment form
         #region Properties
         internal readonly IExperiment _experiment;
 
@@ -25,6 +27,7 @@ namespace LangBiasTester
         private readonly List<Action> _programStages;
         #endregion
 
+        /// Methods to set up, load, and initialize controls and settings
         #region Form Methods
         /// <summary>
         /// Initializes a new instance of the ProgramView class with the specified experiment and utility objects. Sets up and links all controls and labels.
@@ -57,17 +60,18 @@ namespace LangBiasTester
                     GetParticipantID,
                     RunInstructions,
                     TrainingInstructions,
-                    RunExperiment,
+                    StartExperiment,
                     EndExperiment,
                     Application.Exit
                 ];
         }
+
         private void Form1_Load(object sender, EventArgs e)
         {
             ActiveControl = null;
             KeyPreview = true;
             SetUpControls();
-            ProgramControl();
+            ProgramFlow();
         }
 
         private void SetUpControls()
@@ -77,18 +81,19 @@ namespace LangBiasTester
             FormManager.SetUpControl
                 (
                 _participantIDBox,
-                "ParticipantIDBox",
                 Color.DimGray,
-                new Font("Arial", 16F, FontStyle.Regular, GraphicsUnit.Point)
+                new Font("Arial", 16F, FontStyle.Regular, GraphicsUnit.Point),
+                new Size(400, 200),
+                "ParticipantIDBox"
                 );
 
             FormManager.SetUpControl
                 (
                 _fixationCross,
-                "FixationCross",
                 Color.Black,
                 new Font("Arial", 48F, FontStyle.Regular, GraphicsUnit.Point),
-                new Size(1440, 1080)
+                new Size(1440, 1080),
+                "FixationCross"
                 );
 
             _label.Hide();
@@ -98,22 +103,22 @@ namespace LangBiasTester
 
         private void SetUpInstructions()
         {
+            var instructionControls = _experiment.Instructions.GetControls();
             // Set up all controls
-            FormManager.LinkControls(this, [_experiment.Instructions.Intro, _experiment.Instructions.Training, _experiment.Instructions.TrainingEnd, _experiment.Instructions.Response, _experiment.Instructions.BlockEnd, _experiment.Instructions.Exit]);
+            FormManager.LinkControls(this, instructionControls);
             SuspendLayout();
 
-            FormManager.SetUpControl(_experiment.Instructions.Intro, "Instructions");
-            FormManager.SetUpControl(_experiment.Instructions.Training, "TrainingInstructions");
-            FormManager.SetUpControl(_experiment.Instructions.TrainingEnd, "TrainingInstructions");
-            FormManager.SetUpControl(_experiment.Instructions.Response, "ResponseInstructions");
-            FormManager.SetUpControl(_experiment.Instructions.Exit, "ExitInstructions");
-            FormManager.SetUpControl(_experiment.Instructions.BlockEnd, "BlockEndInstructions");
+            foreach (var control in instructionControls)
+            {
+                FormManager.SetUpControl(control);
+            }
 
             _experiment.Instructions.HideAll();
         }
-
         #endregion
 
+        /// Methods to progress to different phases of the program
+        #region Program Methods
         /// <summary>
         /// Advances the program to the next stage in the experiment workflow, executing the appropriate actions for the
         /// current stage.
@@ -123,13 +128,21 @@ namespace LangBiasTester
         /// counter and invoking stage-specific logic, such as running tutorials, collecting participant information, or
         /// ending the experiment. The actions performed depend on the current stage.
         /// </remarks>
-        internal void ProgramControl()
+        private void ProgramFlow()
         {
             _programStage++;
             _programStages[_programStage]();
         }
+        private void Exit(object? sender, KeyEventArgs? e)
+        {
+            if (e != null) e.SuppressKeyPress = true;
+            KeyDown -= Exit;
+            ProgramFlow();
+        }
+        #endregion
 
-        #region Intro Methods
+        /// Methods to display ID box and collect ID information
+        #region ID Box Methods
         /// <summary>
         /// Initializes and configures the participant ID input control.
         /// </summary>
@@ -138,7 +151,7 @@ namespace LangBiasTester
         /// placeholder text, and event handlers. It should be called during the form's initialization to ensure the
         /// participant ID input is ready for user interaction.
         /// </remarks>
-        internal void GetParticipantID()
+        private void GetParticipantID()
         {
             _participantIDBox.Show();
 
@@ -147,96 +160,12 @@ namespace LangBiasTester
 
             _participantIDBox.KeyDown += RegisterIDBoxInput;
         }
-
-        /// <summary>
-        /// Presents the participants with instructions.
-        /// </summary>
-        /// <remarks>
-        /// Also subscribes the dismiss instructions event.
-        /// </remarks>
-        internal void RunInstructions()
-        {
-            _experiment.Instructions.Intro.Show();
-            KeyDown += DismissInstructions;
-        }
-        internal void TrainingInstructions()
-        {
-            if (!_experiment.Settings.RunTraining)
-            {
-                ProgramControl();
-                return;
-            }
-            _experiment.Instructions.Training.Show();
-
-            _timer.Tick += RunTraining;
-            TimerStart(10);
-        }
-        #endregion
-
-        #region Experiment Methods
-        /// <summary>
-        /// Initializes and starts the experiment by setting up the initial display and running the first trial.
-        /// </summary>
-        /// <remarks>
-        /// This method should be called to begin the experiment sequence. It resets the current
-        /// trial and round counters before starting the first trial. Subsequent trials are managed
-        /// internally.
-        /// </remarks>
-        internal void RunExperiment()
-        {
-            _currentTrial = _experiment.Trials.First;
-            _currentTrialSequence = 0;
-
-            RunTrial(_currentTrial);
-        }
-
-        /// <summary>
-        /// Performs cleanup and finalization tasks at the end of the experiment, including displaying a completion
-        /// message, exporting experiment data, and preparing the application to exit.
-        /// </summary>
-        /// <remarks>
-        /// Call this method when the experiment has concluded to ensure that all results are
-        /// saved and the participant is informed that the session is complete. After this method is called, pressing
-        /// any key will exit the application.
-        /// </remarks>
-        internal void EndExperiment()
-        {
-            _experiment.Instructions.Exit.Show();
-
-            _experiment.ExportData();
-
-            KeyDown += Exit;
-        }
-
-        internal void InterruptExperiment()
-        {
-            _experiment.Interrupted = true;
-            var exit = MessageBox.Show("It appears you have pressed the escape key. Would you like to terminate the experiment here?", "Interrupt Experiment?", MessageBoxButtons.YesNo);
-
-            if (exit == DialogResult.Yes)
-            {
-                var keepData = MessageBox.Show("Would you like to register the data from this run?", "Keep Data?", MessageBoxButtons.YesNoCancel);
-
-                if (keepData == DialogResult.Yes)
-                {
-                    KeyDown -= StartNewTrialSequence;
-                    KeyDown -= CatchResponse;
-                    _experiment.Instructions.HideAll();
-                    EndExperiment();
-                }
-                else if (keepData == DialogResult.Cancel) return;
-                else Application.Exit();
-            }
-        }
-        #endregion
-
-        #region Event Methods
         private void RegisterIDBoxInput(object? sender, KeyEventArgs? e)
         {
             var inputIsNumber = int.TryParse(_participantIDBox.Text, out int participantID);
 
             if (e == null || e.KeyCode != Keys.Enter || !inputIsNumber) return;
-            
+
             if (participantID == _experiment.Settings.AdminID)
             {
                 _experiment.SettingsUI.Run();
@@ -254,25 +183,52 @@ namespace LangBiasTester
 
             SetUpInstructions();
 
-            ProgramControl();
+            ProgramFlow();
+        }
+        #endregion
+
+        /// Methods to run training and display instructions
+        #region Training/Instruction Methods
+        /// <summary>
+        /// Presents the participants with instructions.
+        /// </summary>
+        /// <remarks>
+        /// Also subscribes the dismiss instructions event.
+        /// </remarks>
+        private void RunInstructions()
+        {
+            _experiment.Instructions.Show(Intro);
+            KeyDown += DismissInstructions;
         }
         private void DismissInstructions(object? sender, KeyEventArgs? e)
         {
             if (e == null) return;
-            
+
             e.SuppressKeyPress = true;
             KeyDown -= DismissInstructions;
 
-            _experiment.Instructions.Intro.Hide();
+            _experiment.Instructions.Hide(Intro);
 
-            ProgramControl();
+            ProgramFlow();
         }
-        internal void RunTraining(object? sender, EventArgs? e)
+        private void TrainingInstructions()
+        {
+            if (!_experiment.Settings.RunTraining)
+            {
+                ProgramFlow();
+                return;
+            }
+            _experiment.Instructions.Show(Training);
+
+            _timer.Tick += RunTraining;
+            TimerStart(10);
+        }
+        private void RunTraining(object? sender, EventArgs? e)
         {
             _timer.Tick -= RunTraining;
             TimerStop();
 
-            var sampleStimulusCount = (int) float.Sqrt((_experiment.Stimuli.Count / _experiment.Settings.TrialBlocks) / _experiment.Settings.SequencesPerTrialBlock);
+            var sampleStimulusCount = (int)float.Sqrt((_experiment.Stimuli.Count / _experiment.Settings.TrialBlocks) / _experiment.Settings.SequencesPerTrialBlock);
 
             _sampleStimuli = new(_experiment.Stimuli.GetRange(_experiment.Stimuli.Count - sampleStimulusCount, sampleStimulusCount).Select(StimulusManager.Clone));
 
@@ -301,8 +257,8 @@ namespace LangBiasTester
             {
                 _timer.Tick -= EndTrainingStimulus;
 
-                _experiment.Instructions.Training.Hide();
-                _experiment.Instructions.TrainingEnd.Show();
+                _experiment.Instructions.Hide(Training);
+                _experiment.Instructions.Show(TrainingEnd);
 
                 KeyDown += DismissTraining;
             }
@@ -310,98 +266,118 @@ namespace LangBiasTester
         private void DismissTraining(object? sender, KeyEventArgs? e)
         {
             if (e == null) return;
-                
+
             e.SuppressKeyPress = true;
             KeyDown -= DismissTraining;
 
-            _experiment.Instructions.TrainingEnd.Hide();
+            _experiment.Instructions.Hide(TrainingEnd);
 
             if (e.KeyCode == _experiment.Settings.RepeatTrainingKey) TrainingInstructions();
             else
             {
                 StimulusManager.DisposeOfMultipleStimuli(_experiment.Stimuli);
-                ProgramControl();
+                ShowResponseInstructions();
             }
         }
-        private void TimeUp(object? sender, EventArgs? e)
+        private void ShowResponseInstructions()
         {
-            // If reaction time is not being tested, collect response after the trial ends.
-            // Does not currently have a logic to record the response time (if enabled)
-            if (!_experiment.Settings.TestReactionTime)
-            {
-                CollectResponse();
-                return;
-            }
-
-            StopTrial();
-            ResetTrial();
-
-            // If time is up and reaction time is being tested, register no response.
-            _currentTrial.Value.Response = null;
-
-            Thread.Sleep(_experiment.Settings.TimeBetweenTrials * 1000);
-
-            NextTrial();
+            _experiment.Instructions.Show(ResponseTraining);
+            KeyDown += ShowSampleResponseScreen;
         }
-        private void CatchResponse(object? sender, KeyEventArgs? e)
+        private void ShowSampleResponseScreen(object? sender, KeyEventArgs e)
         {
             if (e == null) return;
+
             e.SuppressKeyPress = true;
+            KeyDown -= ShowSampleResponseScreen;
+        
+            _experiment.Instructions.Hide(ResponseTraining);
+            _experiment.Instructions.Show(Response);
 
-            var response = e.KeyCode;
-
-            if (response == Keys.Escape)
-            {
-                InterruptExperiment();
-                return;
-            }
-
-            var validResponse = _experiment.Settings.ValidKeys.Contains(response);
-            if (!validResponse) return;
-
-            _experiment.Instructions.Response.Hide();
-            ResetTrial();
-
-            // Confidence rating which corresponds to given response
-            var responseConfidence = _experiment.Settings.TestConfidence ? _experiment.Settings.ConfidenceRatings[response] : 0;
-
-            // TODO: FIX (MESSY)
-            TrialManager.RegisterResponse(_currentTrial.Value, response, responseConfidence);
-            _experiment.SetTrialResponse(_currentTrial.Value);
-
-            Thread.Sleep(_experiment.Settings.TimeBetweenTrials * 1000);
-
-            NextTrial();
+            KeyDown += DismissSampleResponseScreen;
         }
-        private void StartNewTrialSequence(object? sender, KeyEventArgs? e)
+        private void DismissSampleResponseScreen(object? sender, KeyEventArgs e)
         {
             if (e == null) return;
+
             e.SuppressKeyPress = true;
+            KeyDown -= DismissSampleResponseScreen;
 
-            var key = e.KeyCode;
-
-            if (key == Keys.Escape)
-            {
-                InterruptExperiment();
-                return;
-            }
-
-            KeyDown -= StartNewTrialSequence;
-
-            _experiment.Instructions.BlockEnd.Hide();
-
-            _currentTrialSequence++;
-
-            RunTrial(_currentTrial);
-        }
-        private void Exit(object? sender, KeyEventArgs? e)
-        {
-            if (e != null) e.SuppressKeyPress = true;
-            KeyDown -= Exit;
-            ProgramControl();
+            _experiment.Instructions.Hide(Response);
+            ProgramFlow();
         }
         #endregion
 
+        /// Methods to run the experiment
+        #region Experiment Methods
+        private void StartExperiment()
+        {
+            _experiment.Instructions.Show(ExperimentStart);
+            _timer.Tick += RunExperiment;
+            TimerStart(_experiment.Settings.StimulusDuration * 1000);
+        }
+        /// <summary>
+        /// Initializes and starts the experiment by setting up the initial display and running the first trial.
+        /// </summary>
+        /// <remarks>
+        /// This method should be called to begin the experiment sequence. It resets the current
+        /// trial and round counters before starting the first trial. Subsequent trials are managed
+        /// internally.
+        /// </remarks>
+        private void RunExperiment(object? sender, EventArgs? e)
+        {
+            _timer.Tick -= RunExperiment;
+            TimerStop();
+
+            _experiment.Instructions.Hide(ExperimentStart);
+
+            _currentTrial = _experiment.Trials.First;
+            _currentTrialSequence = 0;
+
+            RunTrial(_currentTrial);
+        }
+
+        /// <summary>
+        /// Performs cleanup and finalization tasks at the end of the experiment, including displaying a completion
+        /// message, exporting experiment data, and preparing the application to exit.
+        /// </summary>
+        /// <remarks>
+        /// Call this method when the experiment has concluded to ensure that all results are
+        /// saved and the participant is informed that the session is complete. After this method is called, pressing
+        /// any key will exit the application.
+        /// </remarks>
+        private void EndExperiment()
+        {
+            _experiment.Instructions.Show(End);
+
+            _experiment.ExportData();
+
+            KeyDown += Exit;
+        }
+
+        private void InterruptExperiment()
+        {
+            _experiment.Interrupted = true;
+            var exit = MessageBox.Show("It appears you have pressed the escape key. Would you like to terminate the experiment here?", "Interrupt Experiment?", MessageBoxButtons.YesNo);
+
+            if (exit == DialogResult.Yes)
+            {
+                var keepData = MessageBox.Show("Would you like to register the data from this run?", "Keep Data?", MessageBoxButtons.YesNoCancel);
+
+                if (keepData == DialogResult.Yes)
+                {
+                    KeyDown -= StartNewTrialSequence;
+                    KeyDown -= CatchResponse;
+                    _experiment.Instructions.HideAll();
+                    EndExperiment();
+                }
+                else if (keepData == DialogResult.Cancel) return;
+                else Application.Exit();
+            }
+        }
+        #endregion
+
+        /// Methods to run trials
         #region Trial Methods
         private void StopTrial()
         {
@@ -450,25 +426,80 @@ namespace LangBiasTester
             _currentTrial = _currentTrial.Next;
 
             // TODO: figure out where to place breaks (between blocks, sequences, etc)
-            if (_currentTrial == null) ProgramControl();
+            if (_currentTrial == null) ProgramFlow();
             else if (_currentTrial.Value.Sequence != _currentTrialSequence)
             {
-                _experiment.Instructions.BlockEnd.Show();
+                _experiment.Instructions.Show(BlockEnd);
                 KeyDown += StartNewTrialSequence;
             }
             else RunTrial(_currentTrial);
         }
+        private void StartNewTrialSequence(object? sender, KeyEventArgs? e)
+        {
+            if (e == null) return;
+            e.SuppressKeyPress = true;
 
+            var key = e.KeyCode;
+
+            if (key == Keys.Escape)
+            {
+                InterruptExperiment();
+                return;
+            }
+
+            KeyDown -= StartNewTrialSequence;
+
+            _experiment.Instructions.Hide(BlockEnd);
+
+            _currentTrialSequence++;
+
+            RunTrial(_currentTrial);
+        }
+        private void CatchResponse(object? sender, KeyEventArgs? e)
+        {
+            if (e == null) return;
+            e.SuppressKeyPress = true;
+
+            var response = e.KeyCode;
+
+            if (response == Keys.Escape)
+            {
+                InterruptExperiment();
+                return;
+            }
+
+            var validResponse = _experiment.Settings.ValidKeys.Contains(response);
+            if (!validResponse) return;
+
+            _experiment.Instructions.Hide(Response);
+            ResetTrial();
+
+            // Confidence rating which corresponds to given response
+            var responseConfidence = _experiment.Settings.TestConfidence ? _experiment.Settings.ConfidenceRatings[response] : 0;
+
+            // TODO: FIX (MESSY)
+            TrialManager.RegisterResponse(_currentTrial.Value, response, responseConfidence);
+            _experiment.SetTrialResponse(_currentTrial.Value);
+
+            Thread.Sleep(_experiment.Settings.TimeBetweenTrials * 1000);
+
+            NextTrial();
+        }
+        #endregion
+
+        /// Methods to collect and manage responses
+        #region Response Methods
         private void CollectResponse()
         {
             StopTrial();
 
-            _experiment.Instructions.Response.Show();
+            _experiment.Instructions.Show(Response);
 
             KeyDown += CatchResponse;
         }
         #endregion
 
+        /// Methods to handle the timer
         #region Timer Methods
         private void ResponseTimer(int interval)
         {
@@ -485,6 +516,26 @@ namespace LangBiasTester
         {
             _timer.Stop();
             _timer.Enabled = false;
+        }
+        private void TimeUp(object? sender, EventArgs? e)
+        {
+            // If reaction time is not being tested, collect response after the trial ends.
+            // Does not currently have a logic to record the response time (if enabled)
+            if (!_experiment.Settings.TestReactionTime)
+            {
+                CollectResponse();
+                return;
+            }
+
+            StopTrial();
+            ResetTrial();
+
+            // If time is up and reaction time is being tested, register no response.
+            _currentTrial.Value.Response = null;
+
+            Thread.Sleep(_experiment.Settings.TimeBetweenTrials * 1000);
+
+            NextTrial();
         }
         #endregion
     }
