@@ -25,8 +25,8 @@
   "ControlLang": "CN",
 
   "LangKeys": [
-    [ "F", "D", "S" ],
-    [ "J", "K", "L" ]
+    [ "E", "W", "Q" ],
+    [ "I", "O", "P" ]
   ],
 
   "ShuffleTextLang": true,
@@ -34,7 +34,7 @@
 
   "AudioCount": 11,
   "UseExplicitMorphSteps": false,
-  "MorphCount": 2,
+  "MorphCount": 11,
   "MorphSteps": [
     [ 100, 0 ],
     [ 90, 10 ],
@@ -53,6 +53,6 @@
   "UseStaticMixes": true,
   "MixedAudioFilePath": "config/audio/MixedAudioMetadata.json",
   "RandomizeSnippetStartingPoint": true,
-  "RestrictSnippetRangePerSequence": true,
+  "RestrictSnippetRangePerSequence": false,
   "AudioMargin": 2.0
 }

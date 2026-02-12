@@ -234,7 +234,7 @@ namespace LangBiasTester.Infrastructure.Models
         {
             var instructions = new Dictionary<Lang, string>()
             {
-                { EN, "This block of trials is over. Feel free to take some time to rest. Press any key when you are ready to continue." },
+                { EN, "This block of trials is over. Feel free to take a moment to rest. Press any key when you are ready to continue." },
                 { FR, "Ce bloc d'essais est terminé. N'hésitez pas à prendre un moment pour vous reposer. Appuyez sur n'importe quelle touche quand vous êtes prêt.e à continuer." }
             };
 
