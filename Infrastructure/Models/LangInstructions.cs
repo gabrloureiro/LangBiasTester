@@ -72,10 +72,10 @@ namespace LangBiasTester.Infrastructure.Models
             if (testConfidence)
             {
                 instructions.Add(
-                    EN, "A series of sounds will be presented to you. For each, your task is to indicate what language you hear and your level of certainty in your response. " +
+                    EN, "A series of sounds will be presented to you. After hearing each sound, your task is to indicate what language you hear and your level of certainty in your response. " +
                         "There is no time limit for responding, but try to do so as quickly as possible after the instructions appear.");
                 instructions.Add(
-                    FR, "Une série de sons vous sera présentée. Pour chacun d’eux, votre tâche est d’indiquer quelle langue vous entendez et votre degré de certitude dans votre réponse. " +
+                    FR, "Une série de sons vous sera présentée. Après avoir entendu chaque son, votre tâche est d’indiquer quelle langue vous entendez et votre niveau de certitude dans votre réponse. " +
                         "Il n’y a pas de limite de temps pour répondre, mais essayez de le faire le plus vite possible après l’affichage de la consigne.");
             }
             else
@@ -127,8 +127,10 @@ namespace LangBiasTester.Infrastructure.Models
             var instructions = new Dictionary<Lang, string>()
             {
                 { EN, "The following screen will be presented to you after every trial so that you can indicate your level of certainty in the language you identify. " +
+                "Try not to remove your fingers from the indicated keys throughout the entire duration of the experiment. " +
                 "Take a moment to familiarize yourself with the scale, then press any key when you are ready to proceed to trials." },
                 { FR, "L'écran suivant vous sera présenté après chaque essai pour que vous puissiez indiquer votre niveau de certitude quant à la langue que vous identifiez. " +
+                "Essayez de ne pas retirer vos doigts des touches indiquées pendant toute la durée de l'expérience. " +
                 "Prenez un moment pour vous familiariser avec l'échelle, puis appuyez sur n'importe quelle touche quand vous serez prêt.e à passer aux essais." }
             };
 
