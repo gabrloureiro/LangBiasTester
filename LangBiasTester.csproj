@@ -16,10 +16,16 @@
 
   <ItemGroup>
     <PackageReference Include="NAudio" Version="2.2.1" />
-  </ItemGroup>
+	<Content Include="config\**\*.*">
+		<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	</Content>
 
-  <ItemGroup>
-    <Folder Include="outputs\" />
-  </ItemGroup>
+	<Content Remove="config\audio\unifyfolders.sh" />
 
+	<Content Remove="config\audio\Mixed\**\*.*" />
+
+	<Content Remove="config\audio\MixedAudioMetadata.json" />
+	<Content Remove="config\audio\RawAudioMetadata.json" />
+  </ItemGroup>
+	
 </Project>

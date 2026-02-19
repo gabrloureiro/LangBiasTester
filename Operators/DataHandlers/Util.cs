@@ -349,10 +349,10 @@ namespace LangBiasTester.Operators.DataHandlers
 
                     // Apply random offset
                     var offset = _rnd.NextDouble() * randomOffset;
-                    startingTimestamp += offset;
+                    var curStartingTimestamp = startingTimestamp + offset;
 
                     // Create Audio object from audiosToMix and add it to mixedAudios
-                    mixedAudios.Add(LangAudioManager.CreateStaticAudioMix(audiosToMix, audioFolderString, startingTimestamp, duration, trimmed));
+                    mixedAudios.Add(LangAudioManager.CreateStaticAudioMix(audiosToMix, audioFolderString, curStartingTimestamp, duration, trimmed));
 
                     progressText.AppendText($"Created static audio mix with audios:\r\n{string.Join(",\r\n", audiosToMix.Select(audio => audio.FileName))}.\r\n");
                 }

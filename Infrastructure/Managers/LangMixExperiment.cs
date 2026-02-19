@@ -162,9 +162,11 @@ namespace LangBiasTester.Infrastructure.Managers
                 StimulusSequence = [..Trials.Select(trial => trial.StimulusNumber)]
             };
 
+            Directory.CreateDirectory(Settings.OutputFolder);
+
             var jsonString = JsonSerializer.Serialize(this, _jsonSerializerOptions);
 
-            File.WriteAllText($"outputs/{ParticipantInfo.ID}.json", jsonString);
+            File.WriteAllText($"{Settings.OutputFolder}/{ParticipantInfo.ID}.json", jsonString);
         }
     }
 }

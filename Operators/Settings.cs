@@ -28,6 +28,8 @@ namespace LangBiasTester.Operators
         public int SequencesPerTrialBlock { get; set; }
 
         public bool IncludeControl { get; set; }
+
+        public string? OutputFolder { get; set; }
         
         [JsonIgnore]
         internal Dictionary<Keys, float>? ConfidenceRatings { get; set; }
